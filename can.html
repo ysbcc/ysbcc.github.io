@@ -1,0 +1,120 @@
+<html>  
+<meta http-equiv="X-UA-Compatible" content="chrome=1">  
+<title>canvas test</title>
+<head>
+<style>
+img {width:200px;}
+</style>
+<script src="http://libs.baidu.com/jquery/2.0.0/jquery.js"></script>
+<!-- <script src="http://libs.baidu.com/jquerymobile/1.3.0/jquery.mobile-1.3.0.js"></script> -->
+<!-- <script src="http://libs.baidu.com/backbone/0.9.2/backbone.js"></script> -->
+</head>  
+<body bgcolor="#E6E6FA">  
+	<div>
+		<img id="logo" src="http://ysbcc.github.io/images/icon_download.png" />
+	</div>
+	<div>
+		<input type="file" id="file" />
+	</div>
+	<div>
+        <canvas width=300 height=300 id="thecanvas"></canvas>  
+    </div>
+		
+	<div>
+		<img src id="can2img" alt="canvas to image" />
+	</div>
+	
+	<div>
+		<button id="saveImageBtn">Save Image</button>  
+        <button id="downloadImageBtn">Download Image</button>  
+    </div>  
+</body>  
+<script>  
+	var $e = function (a){
+		return "string"==typeof a ? document.getElementById(a) : a;
+	}
+	
+	var canvas = $e("thecanvas");
+	var ctx = canvas.getContext("2d");
+
+	window.onload = function() {  
+	
+		draw();  
+		var saveButton = $e("saveImageBtn");  
+		bindButtonEvent(saveButton, "click", saveImageInfo);  
+		
+		var dlButton = $e("downloadImageBtn");  
+		bindButtonEvent(dlButton, "click", saveAsLocalImage);  
+		
+		$("#file").on("change", function(e){
+			if (this.files.length){
+				var url = getFileUrl(this);
+				//var bottom = $("#can2img");
+				var bottom = new Image(); 
+				bottom.src = url;
+				bottom.onload = function(){   
+					var height = bottom.naturalHeight*300/bottom.naturalWidth;
+					
+					ctx.drawImage(bottom,0,0, 300, height); 
+					ctx.drawImage($e("logo"), 50, 100, 50, 50);
+				}; 
+				
+			}
+		});
+	};  
+	
+	/** 
+	* 从 file 域获取 本地图片 url 
+	*/ 
+	function getFileUrl(img) { 
+		var url; 
+		if (navigator.userAgent.indexOf("MSIE")>=1) { // IE 
+			url = img.value; 
+		} 
+		else {
+			url = window.URL.createObjectURL(img.files.item(0)); 
+		} 
+		return url; 
+	} 
+	
+		
+	
+	function draw(){  
+		  
+		ctx.fillStyle = "rgba(125, 46, 138, 0.5)";  
+		ctx.fillRect(25,25,100,100);   
+		ctx.fillStyle = "rgba( 0, 146, 38, 0.5)";  
+		ctx.fillRect(58, 74, 125, 100);  
+		ctx.fillStyle = "rgba( 0, 0, 0, 1)"; // black color  
+		ctx.fillText("All I want to say is..", 50, 50);  
+	}  
+	  
+	function bindButtonEvent(element, type, handler)  
+	{  
+		   if(element.addEventListener) {  
+			  element.addEventListener(type, handler, false);  
+		   } else {  
+			  element.attachEvent('on'+type, handler);  
+		   }  
+	}  
+	  
+	function saveImageInfo ()   
+	{  
+		var mycanvas = $e("thecanvas");  
+		var image    = mycanvas.toDataURL("image/png");  
+		
+		var can2img = $e("can2img");
+		can2img.src=image;
+		var w=window.open('about:blank','image from canvas');  
+		w.document.write("<img src='"+image+"' alt='from canvas'/>");  
+	}  
+
+	function saveAsLocalImage () {  
+		var myCanvas = $e("thecanvas");  
+		// here is the most important part because if you dont replace you will get a DOM 18 exception.  
+		// var image = myCanvas.toDataURL("image/png").replace("image/png", "image/octet-stream;Content-Disposition: attachment;filename=foobar.png");  
+		var image = myCanvas.toDataURL("image/png").replace("image/png", "image/octet-stream");   
+		window.location.href=image; // it will save locally  
+	}  
+</script>  
+</html> 
