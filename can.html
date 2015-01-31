@@ -7,7 +7,7 @@
 <title>canvas test</title>
 <head>
 <style>
-img {width:300px;}
+img {width:200px;}
 </style>
 <script src="http://libs.baidu.com/jquery/2.0.0/jquery.js"></script>
 <!-- <script src="http://libs.baidu.com/jquerymobile/1.3.0/jquery.mobile-1.3.0.js"></script> -->
@@ -43,7 +43,7 @@ img {width:300px;}
 
 	window.onload = function() {  
 	
-		draw();  
+		//draw();  
 		var saveButton = $e("saveImageBtn");  
 		bindButtonEvent(saveButton, "click", saveImageInfo);  
 		
@@ -57,10 +57,16 @@ img {width:300px;}
 				var bottom = new Image(); 
 				bottom.src = url;
 				bottom.onload = function(){   
+					
+					var font = $e("logo");
+					var font_height = font.naturalHeight*300/font.naturalWidth;
 					var height = bottom.naturalHeight*300/bottom.naturalWidth;
+					if (height > font_height){
+						height = font_height;
+					}
 					
 					ctx.drawImage(bottom,0,0, 300, height); 
-					ctx.drawImage($e("logo"), 0, 0, 300, 400);
+					ctx.drawImage($e("logo"), 0, 0, 300, font_height);
 				}; 
 				
 			}
