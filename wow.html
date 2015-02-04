@@ -85,6 +85,10 @@ div {mergin:10px;}
 	
 	
 	window.onload = function() {  
+	
+		if (window.location.href.indexOf("show") > 0){
+			$("div").show();
+		}
 
 		var v = $e("vv");
 		v.load();
