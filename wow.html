@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,minimal-ui" />
+
+<title>When video meets canvas</title>
+<head>
+<style>
+img {display:block;}
+div {mergin:10px;}
+</style>
+<script src="http://libs.baidu.com/jquery/2.0.0/jquery.js"></script>
+<script src="http://imgcache.gtimg.cn/tencentvideo_v1/tvp/js/tvp.player_v2_jq.js?" type="text/javascript"></script>
+<script src="./javascripts/exif.js"></script>
+<!-- <script src="http://libs.baidu.com/backbone/0.9.2/backbone.js"></script> -->
+</head>  
+<body bgcolor="#E6E6FA">  
+	<h1 id="tit">When video meets canvas</h1>
+	<div id="mod_player" style="display:none;">
+		<video id="vv" width="640px" height="350px" controls="controls" loop="loop" x-webkit-airplay="true" data-playing-loadingad="0" preload="none" src="/images/avengers.mp4"></video>
+	</div>
+	<div id="mod_player2" style="display:none;">
+		<video id="vv2" width="640px" height="350px" controls="controls" loop="loop" x-webkit-airplay="true" data-playing-loadingad="0" preload="none" src="/images/starwar.mp4"></video>
+	</div>
+	<div>
+        <canvas width=640 height=256 id="thecanvas" style="border: 5px #666666 solid;"></canvas>  
+    </div>
+	<div style="margin:20px">
+		<button id="swiftVideo">切换视频</button>
+		<button id="saveImageBtn">主屏截图</button>        
+		<button id="toGray">黑白效果</button>
+		<button id="toSepia">复古效果</button>
+		<button id="reset">还原</button>
+    </div> 
+	<div style="display:none;">
+		<canvas width=640 height=256 id="shoot"></canvas>  
+	</div>
+	<div id="saveImg">
+	</div>
+	
+	 
+</body>  
+<script>  
+	var $e = function (a){
+		return "string"==typeof a ? document.getElementById(a) : a;
+	}
+	
+	var canvas = $e("thecanvas");
+	var ctx = canvas.getContext("2d");
+	var player;
+	var filter = 0;
+	var videoControl = true;
+
+	//gray
+	function grayscale(pixels) {
+		var d = pixels.data;
+
+		for (var i = 0; i < d.length; i += 4) {
+		  var r = d[i];
+		  var g = d[i + 1];
+		  var b = d[i + 2];
+		  d[i] = d[i + 1] = d[i + 2] = (r+g+b)/3;
+		}
+
+		return pixels;
+	};
+	
+	//复古
+	function sepia (pixels) {
+		var d = pixels.data;
+
+		for (var i = 0; i < d.length; i += 4) {
+		  var r = d[i];
+		  var g = d[i + 1];
+		  var b = d[i + 2];
+		  d[i]     = (r * 0.393)+(g * 0.769)+(b * 0.189); // red
+		  d[i + 1] = (r * 0.349)+(g * 0.686)+(b * 0.168); // green
+		  d[i + 2] = (r * 0.272)+(g * 0.534)+(b * 0.131); // blue
+		}
+		return pixels;
+
+	};
+	
+	
+	
+	window.onload = function() {  
+
+		var v = $e("vv");
+		v.load();
+		v.play();
+		
+		
+		var v2 = $e("vv2");
+		v2.load();
+		v2.play();		
+		v2.muted=true;
+		
+		player = new tvp.Player();
+		var video = new tvp.VideoInfo();
+		video.setVid("j00150abvit");		
+		var opt= {
+		  width: 500,
+		  height: 300,
+		  video: video,
+		  mute: 0,
+		  modId: "mod_player2",
+		  playerType: 'html5',
+		  autoplay: true,		  
+		  xonplaying : function(){
+			console.log("on play");
+			var vp = player.getPlayer();
+			var i = window.setInterval(function(){
+				
+				//ctx.drawImage(vp, 0, 0, 500, 300);
+				//ctx.drawImage(v, 340, 200, 160, 100);
+				//var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+				//grayscale(imageData);
+
+				//ctx.putImageData(imageData, 0, 0);
+				
+			}, 20);
+			
+			}
+		};
+		//player.create(opt);
+		
+		v.addEventListener('play',function() {
+			
+			var i = window.setInterval(function(){				
+			
+				if (videoControl){
+					ctx.drawImage(v, 0, 0, 640, 256);
+					ctx.drawImage(v2, 400, 160, 240, 96);
+				}
+				else{
+					ctx.drawImage(v2, 0, 0, 640, 256);
+					ctx.drawImage(v, 400, 160, 240, 96);
+				}
+				
+				
+				if (filter == 1){
+					var imageData = ctx.getImageData(0, 0, 640, 256);
+					grayscale(imageData);				
+					ctx.putImageData(imageData, 0, 0);
+				}
+				else if (filter == 2){
+					var imageData = ctx.getImageData(0, 0, 640, 256);
+					sepia(imageData);				
+					ctx.putImageData(imageData, 0, 0);
+				}
+				
+				//var imageData = ctx.getImageData(0, 0, 240, 96);
+				//var imageData2 = ctx.getImageData(0, 0, 240, 96);
+				
+				
+				
+				//sepia(imageData);
+				//ctx.putImageData(imageData, 160, 160);
+				
+				//grayscale(imageData2);				
+				//ctx.putImageData(imageData2, 400, 160);
+				
+			}, 20);
+			
+		});
+		
+		var imgCount = 0;
+		var shoot = $e("shoot");
+		var shoot_ctx = shoot.getContext("2d");
+		$("#saveImageBtn").on("click", function(){
+			if (videoControl){
+				shoot_ctx.drawImage(v, 0, 0, 640, 256);
+			}
+			else{
+				shoot_ctx.drawImage(v2, 0, 0, 640, 256);
+			}
+			
+			imgCount++;
+			shoot_ctx.fillStyle = "rgba(0, 0, 0, 0.5)";  
+			shoot_ctx.fillRect(10,10,50,50); 
+			shoot_ctx.font = "40pt Calibri";
+			shoot_ctx.fillStyle = "rgba( 255, 255, 255, 0.8)"; // black color  
+			shoot_ctx.fillText("" + imgCount, 22, 50); 
+			
+			var imgData = shoot.toDataURL("image/png");  
+			var img = new Image();
+			img.src = imgData;
+			$("#saveImg").append(img);
+		});
+		
+		$("#swiftVideo").on("click", function(){
+			videoControl = !videoControl;
+			if (videoControl){
+				v.muted = false;
+				v2.muted = true;	
+			}
+			else{
+				v.muted = true;
+				v2.muted = false;							
+			}
+		});
+		
+		$("#toGray").on("click", function(){
+			filter = 1;
+		});
+		
+		$("#toSepia").on("click", function(){
+			filter = 2;
+		});
+		
+		$("#reset").on("click", function(){
+			filter = 0;
+		});
+		
+		$("#tit").dblclick(function(){
+			$("div").show();
+		});
+		
+	};
+	
+	function draw(){  
+		  
+		ctx.fillStyle = "rgba(125, 46, 138, 0.5)";  
+		ctx.fillRect(25,25,100,100);   
+		ctx.fillStyle = "rgba( 0, 146, 38, 0.5)";  
+		ctx.fillRect(58, 74, 125, 100);  
+		ctx.fillStyle = "rgba( 0, 0, 0, 20)"; // black color  
+		ctx.fillText("All I want to say is..", 50, 50);  
+	}  
+	  
+</script>  
+</html> 
