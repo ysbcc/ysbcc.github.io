@@ -10,27 +10,27 @@
 img {display:block;}
 div {mergin:10px;}
 </style>
-<script src="http://libs.baidu.com/jquery/2.0.0/jquery.js"></script>
-<script src="http://imgcache.gtimg.cn/tencentvideo_v1/tvp/js/tvp.player_v2_jq.js?" type="text/javascript"></script>
-<script src="./javascripts/exif.js"></script>
+
 <!-- <script src="http://libs.baidu.com/backbone/0.9.2/backbone.js"></script> -->
 </head>  
 <body bgcolor="#E6E6FA">  
 	<h1 id="tit">When video meets canvas</h1>
 	<div id="mod_player" style="display:none;">
-		<video id="vv" width="640px" height="350px" controls="controls" loop="loop" webkit-playsinline x-webkit-airplay="true" data-playing-loadingad="0" preload="none" src="/images/avengers.mp4"></video>
+		<video id="vv" controls="controls" loop="loop" webkit-playsinline x-webkit-airplay="true" data-playing-loadingad="0" preload="none" src="/images/avengers.mp4"></video>
 	</div>
 	<div id="mod_player2" style="display:none;">
-		<video id="vv2" width="640px" height="350px" controls="controls" loop="loop" webkit-playsinline x-webkit-airplay="true" data-playing-loadingad="0" preload="none" src="/images/starwar.mp4"></video>
+		<video id="vv2" controls="controls" loop="loop" webkit-playsinline x-webkit-airplay="true" data-playing-loadingad="0" preload="none" src="/images/starwar.mp4"></video>
 	</div>
 	<div>
         <canvas width=640 height=256 id="thecanvas" style="border: 5px #666666 solid;"></canvas>  
     </div>
 	<div style="margin:20px">
+		<button id="stop">暂停</button>
 		<button id="swiftVideo">切换视频</button>
-		<button id="saveImageBtn">主屏截图</button>        
+		<button id="saveImageBtn">主屏截图</button>        		
 		<button id="toGray">黑白效果</button>
 		<button id="toSepia">复古效果</button>
+		<button id="toMosaic">马赛克</button>
 		<button id="reset">还原</button>
     </div> 
 	<div style="display:none;">
@@ -38,9 +38,9 @@ div {mergin:10px;}
 	</div>
 	<div id="saveImg">
 	</div>
-	
 	 
 </body>  
+<script src="http://libs.baidu.com/jquery/2.0.0/jquery.js"></script>
 <script>  
 	var $e = function (a){
 		return "string"==typeof a ? document.getElementById(a) : a;
@@ -82,7 +82,28 @@ div {mergin:10px;}
 
 	};
 	
-	
+	//马赛克
+	function mosaic (pixels) {
+		var pixelArray = pixels.data;
+		var mosaic= {x:4,y:4};
+		
+		for(var i=0;i<pixels.height;i+=mosaic.y){
+			for(var j=0;j<pixels.width;j+=mosaic.x){
+		    var num=Math.random();
+			var randomPixel={x:Math.floor(num*mosaic.x+i),y:Math.floor(num*mosaic.y+j)};
+			
+			for(var k=j;k<j+mosaic.x;k++)
+				for(var l=i;l<i+mosaic.y;l++){
+					pixelArray[(l*pixels.width+k)*4]=pixelArray[(randomPixel.x*pixels.width+randomPixel.y)*4];
+					pixelArray[(l*pixels.width+k)*4+1]=pixelArray[(randomPixel.x*pixels.width+randomPixel.y)*4+1];
+					pixelArray[(l*pixels.width+k)*4+2]=pixelArray[(randomPixel.x*pixels.width+randomPixel.y)*4+2];
+					pixelArray[(l*pixels.width+k)*4+3]=pixelArray[(randomPixel.x*pixels.width+randomPixel.y)*4+3];
+				}
+			}
+		}
+		
+		return pixelArray;
+	};
 	
 	window.onload = function() {  
 	
@@ -91,94 +112,77 @@ div {mergin:10px;}
 		}
 
 		var v = $e("vv");
-		v.load();
-		v.play();
-		
-		
 		var v2 = $e("vv2");
+		v.load();
+		v.play();		
 		v2.load();
 		v2.play();		
 		v2.muted=true;
 		
-		player = new tvp.Player();
-		var video = new tvp.VideoInfo();
-		video.setVid("j00150abvit");		
-		var opt= {
-		  width: 500,
-		  height: 300,
-		  video: video,
-		  mute: 0,
-		  modId: "mod_player2",
-		  playerType: 'html5',
-		  autoplay: true,		  
-		  xonplaying : function(){
-			console.log("on play");
-			var vp = player.getPlayer();
-			var i = window.setInterval(function(){
-				
-				//ctx.drawImage(vp, 0, 0, 500, 300);
-				//ctx.drawImage(v, 340, 200, 160, 100);
-				//var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-				//grayscale(imageData);
-
-				//ctx.putImageData(imageData, 0, 0);
-				
-			}, 20);
-			
-			}
-		};
-		//player.create(opt);
+		var shoot = $e("shoot");
+		var shoot_ctx = shoot.getContext("2d");
 		
-		v.addEventListener('play',function() {
+		var videoWidth = 640;
+		var videoHeight = 256;
+		
+		//video事件，先触发play，再触发loadedmetadata
+		
+		v.addEventListener('loadedmetadata', function(){
+			console.log("loadedmetadata");
 			
+			//重置高宽
+			videoWidth = v.videoWidth;
+			videoHeight = v.videoHeight;
+			canvas.width = videoWidth;
+			canvas.height = videoHeight;
+			shoot.width = videoWidth;
+			shoot.height = videoHeight;
+		});
+		
+		//渲染画面
+		v.addEventListener('play',function() {
+			console.log("play");
 			var i = window.setInterval(function(){				
 			
 				if (videoControl){
-					ctx.drawImage(v, 0, 0, 640, 256);
+					ctx.drawImage(v, 0, 0, videoWidth, videoHeight);
 					ctx.drawImage(v2, 400, 160, 240, 96);
 				}
 				else{
-					ctx.drawImage(v2, 0, 0, 640, 256);
+					ctx.drawImage(v2, 0, 0, videoWidth, videoHeight);
 					ctx.drawImage(v, 400, 160, 240, 96);
 				}
 				
 				
 				if (filter == 1){
-					var imageData = ctx.getImageData(0, 0, 640, 256);
+					var imageData = ctx.getImageData(0, 0, videoWidth, videoHeight);
 					grayscale(imageData);				
 					ctx.putImageData(imageData, 0, 0);
 				}
 				else if (filter == 2){
-					var imageData = ctx.getImageData(0, 0, 640, 256);
+					var imageData = ctx.getImageData(0, 0, videoWidth, videoHeight);
 					sepia(imageData);				
 					ctx.putImageData(imageData, 0, 0);
 				}
-				
-				//var imageData = ctx.getImageData(0, 0, 240, 96);
-				//var imageData2 = ctx.getImageData(0, 0, 240, 96);
-				
-				
-				
-				//sepia(imageData);
-				//ctx.putImageData(imageData, 160, 160);
-				
-				//grayscale(imageData2);				
-				//ctx.putImageData(imageData2, 400, 160);
+				else if (filter == 3){
+					var imageData = ctx.getImageData(0, 0, videoWidth, videoHeight);
+					mosaic(imageData);				
+					ctx.putImageData(imageData, 0, 0);
+				}
 				
 			}, 20);
 			
 		});
 		
+		//截图
 		var imgCount = 0;
-		var shoot = $e("shoot");
-		var shoot_ctx = shoot.getContext("2d");
+		
 		$("#saveImageBtn").on("click", function(){
 			if (videoControl){
-				shoot_ctx.drawImage(v, 0, 0, 640, 256);
+				shoot_ctx.drawImage(v, 0, 0, videoWidth, videoHeight);
 			}
 			else{
-				shoot_ctx.drawImage(v2, 0, 0, 640, 256);
+				shoot_ctx.drawImage(v2, 0, 0, videoWidth, videoHeight);
 			}
 			
 			imgCount++;
@@ -206,12 +210,32 @@ div {mergin:10px;}
 			}
 		});
 		
+		var playStatus = true;
+		$("#stop").on("click", function(){
+			if (playStatus){				
+				this.innerHTML = "播放";
+				v.pause();
+				v2.pause();
+				
+			}
+			else{
+				this.innerHTML = "暂停";
+				v.play();
+				v2.play();
+			}
+			playStatus = !playStatus;
+		});
+		
 		$("#toGray").on("click", function(){
 			filter = 1;
 		});
 		
 		$("#toSepia").on("click", function(){
 			filter = 2;
+		});
+		
+		$("#toMosaic").on("click", function(){
+			filter = 3;
 		});
 		
 		$("#reset").on("click", function(){
