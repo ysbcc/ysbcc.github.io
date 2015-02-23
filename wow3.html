@@ -4,7 +4,7 @@
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width,minimum-scale=0.5,maximum-scale=5,user-scalable=yes,minimal-ui" />
 
-<title>视频图像合成</title>
+<title>两个视频合成</title>
 <head>
 <style>
 img {display:block;}
@@ -12,7 +12,7 @@ div {mergin:10px;}
 </style>
 </head>  
 <body>  
-	<h1 id="tit">视频图像合成</h1>
+	<h1 id="tit">两个视频合成</h1>
 	<div id="mod_player" style="opacity: 0;z-index:9; position:absolute; top:470px;left:20px;overflow: hidden;width:60px">
 		<video id="vv" width=60 height=30 controls="controls" xloop="loop" webkit-playsinline x-webkit-airplay="true" data-playing-loadingad="0" preload="none" src="/images/huabanxie.mp4"></video>
 	</div>
@@ -163,6 +163,10 @@ div {mergin:10px;}
 			shoot.height = videoHeight;
 		});
 		
+		v.addEventListener('pause',function() {
+			vhead.pause();
+		});
+		
 		//渲染画面
 		v.addEventListener('play',function() {
 			vhead.play();
@@ -237,16 +241,18 @@ div {mergin:10px;}
 			$("#saveImg").append(img);
 		});
 		
-		var playStatus = false;
+		var playStatus = true;
 		$("#stop").on("click", function(){
 			if (playStatus){				
 				this.innerHTML = "播放";
+				//vhead.pause();
 				v.pause();
 				
 			}
 			else{
 				this.innerHTML = "暂停";
 				v.play();
+				//vhead.play();
 			}
 			playStatus = !playStatus;
 		});
