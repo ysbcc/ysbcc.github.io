@@ -10,39 +10,44 @@
 img {display:block;}
 div {mergin:10px;}
 </style>
-
-<!-- <script src="http://libs.baidu.com/backbone/0.9.2/backbone.js"></script> -->
 </head>  
-<body bgcolor="#999999">  
+<body>  
 	<h1 id="tit">视频图像合成</h1>
 	<div id="mod_player" style="opacity: 0;z-index:9; position:absolute; top:470px;left:20px;overflow: hidden;width:60px">
 		<video id="vv" width=60 height=30 controls="controls" xloop="loop" webkit-playsinline x-webkit-airplay="true" data-playing-loadingad="0" preload="none" src="/images/huabanxie.mp4"></video>
 	</div>
 	
 	<div style="margin-top: 10px;z-index:1">
-        <canvas width=352 height=360 id="thecanvas" style="border: 5px #666666 solid;"></canvas>  
+        <canvas width=352 height=360 id="thecanvas" style="border: 1px #666666 solid;"></canvas>  
     </div>
 	<div style="margin:20px">
 		<button id="stop">播放</button>
 		<button id="saveImageBtn">截图</button>
-		<button id="reset">查看源视频</button>
-		<button id="myTurn">还原</button>		        		
-		
-		
+		<button id="reset">清除</button>
+		<button id="myTurn">合成</button>		
     </div> 
+	<div>
+		<canvas width=300 height=240 id="precanvas" style="border: 1px #666666 solid;"></canvas>
+	</div>
 	<div style="display:none;">
-	<img src="/images/myhead.png" id='ahead' />
-		<canvas width=352 height=360 id="shoot"></canvas>  
+	<video id="vhead" width=416 height=240 controls="controls" xloop="loop" webkit-playsinline x-webkit-airplay="true" data-playing-loadingad="0" preload="none" src="/images/mysong.mp4"></video>
+		<canvas width=416 height=240 id="shoot" style="border: 1px #666666 solid;"></canvas>
 	</div>
-	<div id="saveImg">
-	</div>
+	<div id="saveImg"></div>
 	 
-</body>  
+</body>   
 <script src="http://libs.baidu.com/jquery/2.0.0/jquery.js"></script>
+<script src="/javascripts/jquery.facedetection.js"></script>
 <script>  
 	var $e = function (a){
 		return "string"==typeof a ? document.getElementById(a) : a;
 	}
+	
+	$('#ahead').faceDetection({
+        complete: function (faces) {
+            console.log(faces);
+        }
+    });
 	
 	var canvas = $e("thecanvas");
 	var ctx = canvas.getContext("2d");
@@ -54,7 +59,7 @@ div {mergin:10px;}
 		var absG = matchPoint[1] - g;
 		var absB = matchPoint[2] - b;
 		var dis = absR*absR+absG*absG+absB*absB;
-		return dis < 900;
+		return dis < 1600;
 	}
 	
 	function checkPosition(imageData){
@@ -62,6 +67,8 @@ div {mergin:10px;}
 			min_y = 9999,
 			max_x = 0,
 			max_y = 0;
+		var min_y_x = 0,
+			max_y_x = 0;
 			
         for (var y = 0; y < imageData.height; y++) {
 			if (max_y && y > (max_y + 5)){
@@ -82,9 +89,16 @@ div {mergin:10px;}
 					//match
 					imageData.data[p+3]=0;
 					if (x < min_x) min_x = x;
-					if (y < min_y) min_y = y;
+					if (y < min_y) {
+						min_y = y;
+						min_y_x = x;
+					}
+					
 					if (x > max_x) max_x = x;
-					if (y > max_y) max_y = y;
+					if (y > max_y) {
+						max_y = y;
+						max_y_x = x;
+					}
 					
 				}
                 
@@ -98,6 +112,7 @@ div {mergin:10px;}
 				y : min_y,
 				width : max_x - min_x,
 				height : max_y - min_y,
+				rotate : Math.atan((min_y_x - max_y_x)/(max_y - min_y))*1.0,
 				imageData: imageData,
 			};
 		}
@@ -112,18 +127,33 @@ div {mergin:10px;}
 
 		var v = $e("vv");
 		v.load();
+		v.play();
+		//v.muted = true;
+		
+		var vhead = $e("vhead");
+		vhead.load();
+		//vhead.play();
+		vhead.muted = true;
+		
 		//v.play();		
 		
-		var shoot = $e("shoot");
-		var shoot_ctx = shoot.getContext("2d");
+		var pre_can = $e("precanvas");
+		var pre_ctx = pre_can.getContext("2d");
 		
 		var videoWidth = 352;
 		var videoHeight = 360;
+		var xx = 120,yy=70,ww=150,hh=110;
 		
-		//video事件，先触发play，再触发loadedmetadata
+		//设置旋转点到画布中心
+		pre_ctx.translate(pre_can.width/2, pre_can.height/2);
+		//旋转画布，为了修正图片方向
+		pre_ctx.rotate(Math.PI/2);	
+		pre_ctx.translate(ww/2 - pre_can.height/2, pre_can.width/2 - hh/2);		
 		
+		//video事件，先触发play，再触发loadedmetadata		
 		v.addEventListener('loadedmetadata', function(){
-			return;
+			
+			//return;
 			//重置高宽
 			videoWidth = v.videoWidth;
 			videoHeight = v.videoHeight;
@@ -135,22 +165,49 @@ div {mergin:10px;}
 		
 		//渲染画面
 		v.addEventListener('play',function() {
-			var head = $e("ahead");
+			vhead.play();
 			var i = window.setInterval(function(){				
 				var start = new Date();
+				
+				//底层MV
 				ctx.drawImage(v, 0, 0, videoWidth, videoHeight);				
 				
 				if (filter == 1){
-					try{
+					
 						var imageData = ctx.getImageData(0, 0, videoWidth, videoHeight);
+						
+						//判断脸部坐标和大小
 						var re = checkPosition(imageData);			
 						if (re){
 							//put a head into the picture
 							ctx.putImageData(re.imageData, 0, 0);
-							ctx.drawImage(head, re.x, re.y, re.width, re.height);	
+							
+							var imgData = canvas.toDataURL("image/png");  
+							var img = new Image();
+							img.src = imgData;
+							
+							
+							//console.log(re.rotate *180/Math.PI);
+							//pre_ctx.fillStyle = "rgba(125, 46, 138, 0.5)";  
+							//pre_ctx.fillRect(0, 0, ww, hh);
+							
+							//旋转画布，为了修正图片方向
+							pre_ctx.rotate(re.rotate);
+							pre_ctx.drawImage(vhead, xx, yy, ww, hh, -ww/2, -hh/2, ww, hh);
+
+							//再切换回来
+							pre_ctx.rotate(-re.rotate);												
+											
+							ctx.drawImage(pre_can, 0, 0, hh, ww, re.x, re.y, re.width, re.height  );
+							ctx.drawImage(img, 0, 0, videoWidth, videoHeight);	
+							
+							//console.log(re.x + "," + re.y + "[" + re.width + "," + re.height + "]");
+							//console.log(((new Date()) - start));
+							//window.a = new Image();
+							//a.src = 'http://192.168.31.238?' + (+start) + "=" + ((new Date()) - start);
 						}
-					}catch(e){
-						alert("视频被重定向了，无法跨域读取");
+					try{}catch(e){
+						alert("视频被重定向了，无法跨域读取:" + e);
 						clearInterval(i);
 					}
 				}
@@ -161,6 +218,8 @@ div {mergin:10px;}
 		
 		//截图
 		var imgCount = 0;
+		var shoot = $e("shoot");
+		var shoot_ctx = shoot.getContext("2d");
 		
 		$("#saveImageBtn").on("click", function(){
 			shoot_ctx.drawImage(canvas, 0, 0, videoWidth, videoHeight);
