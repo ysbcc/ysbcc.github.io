@@ -29,7 +29,7 @@ background: #eeeeee;
 			<li>读取图片Exif信息，自动旋转图片</li>
 			<li>人脸识别，找出图片中的脸部区域</li>
 			<li>将多个图片绘制进canvas</li>
-			<li>将canvas输出成图片</li>
+			<li>将canvas输出到图片</li>
 		</ul>
 	</div>
 	<div>
@@ -40,9 +40,11 @@ background: #eeeeee;
 	</div>
 	<div id="tips" style="color: #666666;"></div>
 	<div>
-        <canvas width=300 height=276 id="thecanvas" style="border: 1px #999999 solid;"></canvas>  
-		<canvas width=1000 height=1000 id="precanvas" style="border: 1px #999999 solid;"></canvas> 
+        <canvas width=300 height=276 id="thecanvas" style="border: 1px #999999 solid;"></canvas>  		 
     </div>
+	<div>
+		<canvas width=1200 height=1200 id="precanvas" style="border: 1px #999999 solid;"></canvas>
+	</div>
 	<div>
 		<button id="saveImageBtn">Save Image</button>  
         <button id="downloadImageBtn">Download Image</button>  
@@ -67,6 +69,16 @@ background: #eeeeee;
 	
 	var canvas = $e("thecanvas");
 	var ctx = canvas.getContext("2d");
+	window.onerror = function (msg,url,l){		
+		var txt = "Error: " + msg + "\n";
+		txt+="URL: " + url + "\n";
+		txt+="Line: " + l + "\n\n";
+		txt+="Click OK to continue.\n\n";
+		//alert(txt);
+		window.a = new Image();
+		a.src = "/?err=" + txt;
+		return true;
+	}
 
 	window.onload = function() {  
 			
@@ -84,9 +96,10 @@ background: #eeeeee;
 		$("#file").on("change", function(e){
 			if (this.files.length){			
 				$e("tips").innerHTML = "正在读取照片并识别人脸..";
+				
 				getFileUrl(this.files[0], function(url){
 					startRender(url);
-				});
+				});				
 			}
 		});
 	};
@@ -98,6 +111,7 @@ background: #eeeeee;
 		bottom.onload = function(){
 			
 			readExif(bottom, function(){
+			
 				ctx.clearRect(0,0,canvas.width,canvas.height);
 				var otn = EXIF.getTag(bottom, 'Orientation') || 1; 
 				
@@ -106,6 +120,9 @@ background: #eeeeee;
 				var pre_can = $e("precanvas");
 				var pre_ctx = pre_can.getContext("2d");
 				
+				if (bottom.naturalWidth < pre_can.width){
+					pre_can.width = bottom.naturalWidth;
+				}
 				//pre_can = bottom.naturalWidth;
 				pre_can.height = bottom.naturalHeight * pre_can.width / bottom.naturalWidth;
 				
@@ -175,7 +192,8 @@ background: #eeeeee;
 						ctx.drawImage($e("logo"), 0, 0, canvas.width, font_height);
 					},
 					error:function (code, message) {
-						alert('Error: ' + message);
+						//alert('Error: ' + message);
+						$e("tips").innerHTML = code + " 脸部识别出错：" + message;
 					}
 				});
 				
@@ -218,7 +236,7 @@ background: #eeeeee;
 	function readExif(img, cb){
 		//参考 http://code.ciaoca.com/javascript/exif-js/
 	
-		EXIF.getData(img, function(){ 			
+		EXIF.getData(img, function(){			
 			$("#imgExif").html("图片Exif信息：\r\n" + EXIF.pretty(this));			
 			cb();
 			//
