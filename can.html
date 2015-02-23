@@ -4,25 +4,44 @@
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,minimal-ui" />
 
-<title>canvas test</title>
+<title>人脸识别 & canvas应用</title>
 <head>
 <style>
 img {width:200px;}
-div {mergin:10px;}
+div {margin:10px;}
+.notice {
+	padding:5px;
+border: dotted 2px #999999;
+width: 300px;
+background: #eeeeee;
+}
+.face {
+            position: absolute;
+            border: 2px solid #FFF;
+        }
 </style>
-<script src="http://libs.baidu.com/jquery/2.0.0/jquery.js"></script>
-<script src="./javascripts/exif.js"></script>
-<!-- <script src="http://libs.baidu.com/backbone/0.9.2/backbone.js"></script> -->
 </head>  
-<body bgcolor="#E6E6FA">  
-	<div>
-		<img id="logo" src="http://ysbcc.github.io/images/font.png" />
+<body>  
+	<div class="notice">
+		该demo包括：
+		<ul style="margin:0px">
+			<li>读取本地图片base64信息</li>
+			<li>读取图片Exif信息，自动旋转图片</li>
+			<li>人脸识别，找出图片中的脸部区域</li>
+			<li>将多个图片绘制进canvas</li>
+			<li>将canvas输出成图片</li>
+		</ul>
 	</div>
 	<div>
-		<input type="file" id="file" />
+		选择照片：<input type="file" id="file" />
 	</div>
 	<div>
-        <canvas width=300 height=300 id="thecanvas" style="border: 5px #666666 solid;"></canvas>  
+		<img id="logo" src="/images/font.png" />
+	</div>
+	<div id="tips" style="color: #666666;"></div>
+	<div>
+        <canvas width=300 height=276 id="thecanvas" style="border: 1px #999999 solid;"></canvas>  
+		<canvas width=1000 height=1000 id="precanvas" style="border: 1px #999999 solid;"></canvas> 
     </div>
 	<div>
 		<button id="saveImageBtn">Save Image</button>  
@@ -38,6 +57,9 @@ div {mergin:10px;}
 	
 	 
 </body>  
+<script src="http://libs.baidu.com/jquery/2.0.0/jquery.js"></script>
+<script src="./javascripts/exif.js"></script>
+<script src="/javascripts/jquery.facedetection.js"></script>
 <script>  
 	var $e = function (a){
 		return "string"==typeof a ? document.getElementById(a) : a;
@@ -47,12 +69,7 @@ div {mergin:10px;}
 	var ctx = canvas.getContext("2d");
 
 	window.onload = function() {  
-	
-		//check 
-		//if(!window.URL || !window.URL.createObjectURL){
-		//	alert("not support window.URL.createObjectURL:" + window.URL);
-		//}
-		
+			
 		if (!window.FileReader){
 			alert("not support window.FileReader!");
 		}
@@ -66,7 +83,7 @@ div {mergin:10px;}
 		
 		$("#file").on("change", function(e){
 			if (this.files.length){			
-				
+				$e("tips").innerHTML = "正在读取照片并识别人脸..";
 				getFileUrl(this.files[0], function(url){
 					startRender(url);
 				});
@@ -77,36 +94,90 @@ div {mergin:10px;}
 	function startRender(url){
 		var bottom = new Image(); 
 		bottom.src = url;
-		bottom.onload = function(){   
-			
-			var font = $e("logo");
-			var font_height = font.naturalHeight*300/font.naturalWidth;
-			var height = bottom.naturalHeight*300/bottom.naturalWidth;
-			if (height > font_height){
-				//height = font_height;
-			}
+		
+		bottom.onload = function(){
 			
 			readExif(bottom, function(){
 				ctx.clearRect(0,0,canvas.width,canvas.height);
 				var otn = EXIF.getTag(bottom, 'Orientation') || 1; 
 				
-				var fixInfo = fixOrientation(otn);
+				var degree = fixOrientation(otn);
+				
+				var pre_can = $e("precanvas");
+				var pre_ctx = pre_can.getContext("2d");
+				
+				//pre_can = bottom.naturalWidth;
+				pre_can.height = bottom.naturalHeight * pre_can.width / bottom.naturalWidth;
 				
 				//设置旋转点到画布中心
-				ctx.translate(canvas.width/2,canvas.height/2);
+				pre_ctx.translate(pre_can.width/2,pre_can.height/2);
 				
 				//旋转画布，为了修正图片方向
-				ctx.rotate(fixInfo.degree);
+				pre_ctx.rotate(degree);
+								
+				pre_ctx.drawImage(bottom, -pre_can.width/2, -pre_can.height/2, pre_can.width, pre_can.height); 				
 				
-				console.log(otn + "  " + fixInfo.x + "," + fixInfo.y);
-				//ctx.drawImage(bottom,0,0,300,height);
-				ctx.drawImage(bottom, -canvas.width/2, -canvas.height/2, 300, height); 
+				//再切换回来
+				pre_ctx.rotate(-degree);
+				pre_ctx.translate(-pre_can.width/2,-pre_can.height/2);
 				
-				//再切换回来，放模板
-				ctx.rotate(-fixInfo.degree);
-				ctx.translate(-canvas.width/2,-canvas.height/2);
-				
-				ctx.drawImage($e("logo"), 0, 0, 300, font_height);
+				//人脸识别
+				$(pre_can).faceDetection({
+					interval: 1,
+					complete: function (faces) {
+						console.log(faces);      
+						//console.log(faces.length);      
+						
+						$('.face').remove();
+						
+						//人脸识别可能有误判，因此获取最大的那张脸
+						var biggest = 0;
+						for (var i = 0; i < faces.length; i++) {
+                            $('<div>', {
+                                'class':'face',
+                                'css': {
+                                    'position': 'absolute',
+                                    'left':     faces[i].offsetX + 'px',
+                                    'top':      faces[i].offsetY + 'px',
+                                    'width':    faces[i].width  + 'px',
+                                    'height':   faces[i].height + 'px'
+                                }
+                            })
+                            .insertAfter(this);
+							
+							if (i && faces[biggest].width < faces[i].width){
+								biggest = i;
+							}
+                        }
+						
+						if (faces.length){
+							var msg = "识别出" + faces.length + "张人脸";
+							if (faces.length > 1){
+								msg = msg + ",取脸最大的那张";
+							}
+							
+							$e("tips").innerHTML = msg;							
+							ctx.drawImage(pre_can, Math.floor(faces[biggest].x), Math.floor(faces[biggest].y), 
+							Math.floor(faces[biggest].width*1.1), Math.floor(faces[biggest].height*1.3),
+							170, 95, 65, 82);							
+						}
+						else{
+							//没有识别出人脸
+							$e("tips").innerHTML = "oops, 没识别出人脸";
+							ctx.drawImage(pre_can, 0, 0, canvas.width, 
+							bottom.naturalHeight * canvas.width / bottom.naturalWidth);	
+						}
+						
+						//ctx.clearRect(0,240,canvas.width, canvas.height - 240); 
+						
+						var font = $e("logo");
+						var font_height = font.naturalHeight * canvas.width/font.naturalWidth;
+						ctx.drawImage($e("logo"), 0, 0, canvas.width, font_height);
+					},
+					error:function (code, message) {
+						alert('Error: ' + message);
+					}
+				});
 				
 			});
 			
@@ -117,7 +188,6 @@ div {mergin:10px;}
 	function fixOrientation(otn){
 		//参考 http://blog.csdn.net/ouyangtianhan/article/details/29825885
 		var degree = 90 * Math.PI / 180;
-		var x = -1, y = -1;
 		switch(otn){
 			case 1:
 				degree = 0;
@@ -142,18 +212,14 @@ div {mergin:10px;}
 				break;
 		};
 		
-		return {
-			degree : degree,
-			x : x,
-			y : y
-		};
+		return degree;
 	}
 	
 	function readExif(img, cb){
 		//参考 http://code.ciaoca.com/javascript/exif-js/
 	
 		EXIF.getData(img, function(){ 			
-			$("#imgExif").html(EXIF.pretty(this));			
+			$("#imgExif").html("图片Exif信息：\r\n" + EXIF.pretty(this));			
 			cb();
 			//
 			//EXIF.getTag(this, 'Orientation'); 
@@ -187,13 +253,14 @@ div {mergin:10px;}
 		
 	
 	function draw(){  
-		  
+		/*
 		ctx.fillStyle = "rgba(125, 46, 138, 0.5)";  
 		ctx.fillRect(25,25,100,100);   
 		ctx.fillStyle = "rgba( 0, 146, 38, 0.5)";  
 		ctx.fillRect(58, 74, 125, 100);  
 		ctx.fillStyle = "rgba( 0, 0, 0, 1)"; // black color  
-		ctx.fillText("All I want to say is..", 50, 50);  
+		*/
+		ctx.fillText("画图区域", 120, 140);  
 	}  
 	  
 	function bindButtonEvent(element, type, handler)  
