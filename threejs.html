@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>My first Three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>
+		<script src="js/three.js"></script>
+		<script src="js/OrbitControls.js"></script>
+		<script src="js/stats.min.js"></script>
+		<script>
+		
+			//创建场景
+			var scene = new THREE.Scene();
+			
+			//创建摄像机
+			var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+			//创建dom元素
+			var renderer = new THREE.WebGLRenderer();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setClearColor(0x666666);
+			
+			//辅助线
+			renderer.shadowMapEnabled = true;
+			renderer.shadowMapSoft = true;
+			
+			document.body.appendChild( renderer.domElement );
+						
+			//地板
+			var groundGeometry = new THREE.PlaneGeometry(10, 10, 1, 1);
+			ground = new THREE.Mesh(groundGeometry, new THREE.MeshLambertMaterial({
+				color: 0xffffff
+			}));
+			ground.position.y = 0;
+			ground.rotation.x = - Math.PI / 2;
+			ground.receiveShadow = true;
+			scene.add(ground);
+			
+			//光源			
+			var light = new THREE.DirectionalLight( 0xffffff );
+			light.position.set( 0, 5, 0 );
+			
+			light.castShadow = true;
+			light.shadowCameraVisible = true;
+			light.shadowDarkness = 0.2;
+			light.shadowMapWidth = light.shadowMapHeight = 10;
+			scene.add( light );
+			
+			var particleLight = new THREE.Mesh( new THREE.SphereGeometry(1, 32, 32), new THREE.MeshBasicMaterial({ color: 0x44ff44 }));
+			particleLight.position.set( 0, 5, 0 );//.position = light.position;
+			scene.add(particleLight);
+			
+			
+			
+			//正方体
+			var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+			var material = new THREE.MeshBasicMaterial( { 
+				color: "#999",
+				shading : THREE.SmoothShading,
+				blending : THREE.AdditiveBlending				
+			} );
+			
+			var cube = new THREE.Mesh( geometry, material );
+			cube.castShadow = cube.receiveShadow = true;
+			cube.position.x = 0;
+			cube.position.y = 2;
+			cube.position.z = 0;
+			scene.add( cube );
+
+			camera.position.y = 5;
+			camera.position.z = 10;
+			
+			var controls = new THREE.OrbitControls(camera, renderer.domElement);
+			controls.target = new THREE.Vector3(0, 0, 0);
+			var clock = new THREE.Clock();
+			
+			// prepare stats
+			var stats = new Stats();
+			stats.domElement.style.position = 'absolute';
+			stats.domElement.style.bottom = '0px';
+			stats.domElement.style.zIndex = 10;
+			document.body.appendChild( stats.domElement );
+			
+			
+			//循环
+			function render() {
+				cube.rotation.x += 0.01;
+				cube.rotation.y += 0.01;
+				controls.update(clock.getDelta());
+				stats.update();
+				
+				var timer = Date.now() * 0.000025;
+				//light.position.x = Math.sin(timer * 5) * 3;
+				//light.position.z = Math.cos(timer * 5) * 3;				
+				
+				requestAnimationFrame( render );
+				renderer.render( scene, camera );
+			}
+			render();
+		</script>
+	</body>
+</html>
