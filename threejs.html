@@ -9,9 +9,9 @@
 		</style>
 	</head>
 	<body>
-		<script src="js/three.js"></script>
-		<script src="js/OrbitControls.js"></script>
-		<script src="js/stats.min.js"></script>
+		<script src="javascripts/three/three.js"></script>
+		<script src="javascripts/three/OrbitControls.js"></script>
+		<script src="javascripts/three/stats.min.js"></script>
 		<script>
 		
 			//创建场景
@@ -59,11 +59,10 @@
 			
 			//正方体
 			var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-			var material = new THREE.MeshBasicMaterial( { 
-				color: "#999",
-				shading : THREE.SmoothShading,
-				blending : THREE.AdditiveBlending				
-			} );
+			
+			var texture = THREE.ImageUtils.loadTexture( 'images/crate.gif' );
+			
+			var material = new THREE.MeshBasicMaterial( { map: texture } );
 			
 			var cube = new THREE.Mesh( geometry, material );
 			cube.castShadow = cube.receiveShadow = true;
