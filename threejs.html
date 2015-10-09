@@ -146,13 +146,13 @@
 											
 				//地板
 				var groundGeometry = new THREE.BoxGeometry( 500, 10, 500 );//new THREE.PlaneGeometry(10, 10, 1, 1);
-				//var ground = new THREE.Mesh(groundGeometry, material);
-				var ground = new THREE.Mesh(groundGeometry, new THREE.MeshLambertMaterial({
-					color: 0xaaaaaa,
-					shininess: 150,
-					specular: 0xffffff,
-					shading: THREE.SmoothShading
-				}));
+				var gtexture = THREE.ImageUtils.loadTexture( 'images/texture.jpg' );
+				gtexture.wrapS = THREE.RepeatWrapping;
+				gtexture.wrapT = THREE.RepeatWrapping;
+				gtexture.repeat.set( 4, 4 );
+				var ground = new THREE.Mesh(groundGeometry, new THREE.MeshBasicMaterial( { 
+					map: gtexture
+				} ));
 				
 				ground.position.y = 0;
 				//ground.rotation.x = - Math.PI / 2;
