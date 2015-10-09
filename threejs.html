@@ -19,7 +19,10 @@
 		</div>
 
 		<script>
+			//判断是否支持webgl
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+			
+			
 			var $e = function (a){
 					return "string"==typeof a ? document.getElementById(a) : a;
 			}
@@ -33,6 +36,7 @@
 			
 				var v = $e("vv");
 				v.load();
+				v.muted = true;
 				v.play();
 				var videoWidth = 640;
 				var videoHeight = 256;		
@@ -62,6 +66,15 @@
 		
 			function initThreejs(){
 				
+				/*
+				投影
+				Three.js的光源默认不会导致物体间的投影，打开投影需要执行以下几步：
+				打开渲染器的地图阴影: renderer.shadowMapEnabled = true;
+				启用光线的投影：light.castShadow = true;
+				把模型设置为生成投影：mesh.castShadow = true;
+				把模型设置为接收阴影：mesh.receiveShadow= true;
+				*/
+				
 				//创建场景
 				var scene = new THREE.Scene();
 				
@@ -73,27 +86,12 @@
 				//创建dom元素
 				var renderer = new THREE.WebGLRenderer();
 				renderer.setSize( window.innerWidth, window.innerHeight );
-				//renderer.setClearColor(0x666666);
+				renderer.setClearColor(0xffffff);
 				
-				//辅助线
+				//打开渲染器的地图阴影
 				renderer.shadowMapEnabled = true;
 				renderer.shadowMapSoft = true;			
 				document.body.appendChild( renderer.domElement );
-							
-				//地板
-				var groundGeometry = new THREE.BoxGeometry( 500, 10, 500 );//new THREE.PlaneGeometry(10, 10, 1, 1);
-				ground = new THREE.Mesh(groundGeometry, new THREE.MeshLambertMaterial({
-					color: 0xa0adaf,
-					shininess: 150,
-					specular: 0xffffff,
-					shading: THREE.SmoothShading
-				}));
-				
-				ground.position.y = 0;
-				//ground.rotation.x = - Math.PI / 2;
-				ground.castShadow = false;
-				ground.receiveShadow = true;
-				scene.add(ground);
 				
 				//光源，方向光
 				var dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
@@ -106,32 +104,32 @@
 				dirLight.shadowCameraTop	= 300;
 				dirLight.shadowCameraBottom = -300;
 				dirLight.shadowDarkness = 0.5;
-				dirLight.shadowCameraVisible = true;
+				//辅助线
+				//dirLight.shadowCameraVisible = true;
 				dirLight.shadowMapWidth = 1024;
 				dirLight.shadowMapHeight = 1024;
 				//dirLight.name = 'Dir. Light';
-				scene.add( dirLight );
+				//scene.add( dirLight );
 				
-				var ambient = new THREE.AmbientLight( 0x404040 );
+				var ambient = new THREE.AmbientLight( 0xffffff );
 				scene.add( ambient );
+								
+				var spotLight = new THREE.SpotLight( 0xffffff );
+				spotLight.position.set( 50, 400, 50 );
+				spotLight.castShadow = true;
+				spotLight.shadowCameraNear = 1;
+				spotLight.shadowCameraFar = 600;
+				spotLight.shadowDarkness = 0.5;
+				//辅助线
+				//spotLight.shadowCameraVisible = true;
+				spotLight.shadowMapWidth = 1024;
+				spotLight.shadowMapHeight = 1024;
+				spotLight.name = 'Spot Light';
+				scene.add( spotLight );
 				
-				/*
-				
-					spotLight = new THREE.SpotLight( 0xffffff );
-					spotLight.position.set( 10, 10, 5 );
-					spotLight.castShadow = true;
-					spotLight.shadowCameraNear = 8;
-					spotLight.shadowCameraFar = 30;
-					spotLight.shadowDarkness = 0.5;
-					spotLight.shadowCameraVisible = true;
-					spotLight.shadowMapWidth = 1024;
-					spotLight.shadowMapHeight = 1024;
-					spotLight.name = 'Spot Light';
-					scene.add( spotLight );
-				*/		
 				
 				//正方体
-				var geometry = new THREE.BoxGeometry( 100, 100, 100 );			
+				var geometry = new THREE.BoxGeometry( 100, 100, 100 );//new THREE.SphereGeometry(32, 100);			
 				var texture = new THREE.Texture( canvas );				
 				texture.needsUpdate = true;
 				//var texture = THREE.ImageUtils.loadTexture( 'images/crate.gif' );
@@ -141,10 +139,28 @@
 				cube.castShadow = true;
 				cube.receiveShadow = true;
 				cube.position.x = 0;
-				cube.position.y = 150;
+				cube.position.y = 100;
 				cube.position.z = 0;
 				scene.add( cube );
 
+											
+				//地板
+				var groundGeometry = new THREE.BoxGeometry( 500, 10, 500 );//new THREE.PlaneGeometry(10, 10, 1, 1);
+				//var ground = new THREE.Mesh(groundGeometry, material);
+				var ground = new THREE.Mesh(groundGeometry, new THREE.MeshLambertMaterial({
+					color: 0xaaaaaa,
+					shininess: 150,
+					specular: 0xffffff,
+					shading: THREE.SmoothShading
+				}));
+				
+				ground.position.y = 0;
+				//ground.rotation.x = - Math.PI / 2;
+				ground.castShadow = false;
+				ground.receiveShadow = true;
+				scene.add(ground);
+				
+				
 				//帧率统计
 				var stats = new Stats();
 				stats.domElement.style.position = 'absolute';
@@ -165,9 +181,9 @@
 					stats.update();
 					texture.needsUpdate = true;
 					
-					var timer = Date.now() * 0.000025;
-					//light.position.x = Math.sin(timer * 5) * 3;
-					//light.position.z = Math.cos(timer * 5) * 3;				
+					//var timer = Date.now() * 0.000025;
+					//spotLight.position.x = Math.sin(timer * 5) * 100;
+					//spotLight.position.z = Math.cos(timer * 5) * 100;				
 					
 					requestAnimationFrame( render );
 					renderer.render( scene, camera );
