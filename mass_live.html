@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="robots" content="all" />
+<meta name="author" content="Tencent-ISRD" />
+<meta name="Copyright" content="Tencent" />
+<meta name="Description" content="" />
+<meta name="Keywords" content="" />
+<title>腾讯视频直播测试</title>
+<style>
+.mid {text-align: center; width:1200px; margin:0px auto}
+.video_iframe {z-index: 1; width: 240px !important; height: 160px !important; overflow: hidden;}
+</style>
+</head>
+
+
+<body>
+<div class='mid' id='livelist'>
+</div>
+<div style="display:none">
+<iframe class="video_iframe" xsrc="http://v.qq.com/iframe/player.html?cnlid=100104700&width=985&height=666" frameborder="0" allowfullscreen="" style="z-index: 1; width: 985px !important; height: 666px !important; overflow: hidden;" scrolling="no"></iframe>
+</div>
+<script>
+	var cnlids = [100001400,100104800,100104700,100101600,100006400,100104400,100102800,100003900,100104000,100001500,100103800,100105100,100003601,100105501,123002500,123001803,123004603,123100503,100001400,100104800];
+	//cnlids = [123002500,123001803,123004603,123100503];
+	var livelist = document.getElementById("livelist");
+	
+	for(var i=0, len=cnlids.length; i<len; i++){
+		(function(id){
+			setTimeout(function(){
+				createLive(id);
+			}, i*1000);
+		})(cnlids[i]);		
+	}
+
+	function createLive(id){
+		var dom = document.createElement("iframe");
+		dom.className = "video_iframe";
+		dom.setAttribute("scrolling", "no");
+		dom.setAttribute("frameborder", "0");
+		dom.src = "http://v.qq.com/iframe/player.html?width=240&height=200&cnlid=" + id;
+		livelist.appendChild(dom);
+	}
+</script>
+</body>
+</html>
+
