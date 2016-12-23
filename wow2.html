@@ -15,11 +15,11 @@ div {mergin:10px;}
 </head>  
 <body bgcolor="#999999">  
 	<h1 id="tit">视频图像合成</h1>
-	<div id="mod_player" style="opacity: 0;z-index:9; position:absolute; top:470px;left:20px;overflow: hidden;width:60px">
-		<video id="vv" width=60 height=30 controls="controls" xloop="loop" playsinline="true" webkit-playsinline="true" x5-video-player-type="h5"  data-playing-loadingad="0" preload="none" src="/images/huabanxie.mp4"></video>
+	<div id="mod_player" style="z-index:1">
+		<video id="vv" width=300 height=300 controls="controls" xloop="loop" playsinline="true" webkit-playsinline="true" x5-video-player-type="h5"  data-playing-loadingad="0" preload="none" src="/images/huabanxie.mp4" style="z-index:1"></video>
 	</div>
 	
-	<div style="margin-top: 10px;z-index:10">
+	<div style="margin-top: 10px;z-index:9">
         <canvas width=352 height=360 id="thecanvas" style="border: 5px #666666 solid;"></canvas>  
     </div>
 	<div style="margin:20px">
