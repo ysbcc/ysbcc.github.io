@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>全景视频</title>
+    <title>全景视频1</title>
     <meta name="description" content="全景视频">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="x5-fullscreen" content="true">
@@ -24,7 +24,7 @@
           src="./images/vr.mp4" width="100%" height="100%" muted="muted"></video>
   </div>
 
-    <a-scene id="scene" stats>
+    <a-scene id="scene" stats style="position: fixed;top: 0px; z-index:5">
       <a-entity material="shader: flat; src: #myvideo" geometry="primitive: sphere; radius: 100"
                 scale="-1 1 1">
       </a-entity>
