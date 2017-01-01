@@ -18,7 +18,7 @@
           playsinline="true" crossorigin="anonymous" autoplay="autoplay" controls="controls"
           src="./images/vr.mp4" width="100%" height="100%" muted="muted"></video>
   </div>
-    <a-scene stats style='position: absolute;top: 0px'>
+    <a-scene id="scene" stats>
       <a-entity material="shader: flat; src: #myvideo" geometry="primitive: sphere; radius: 100"
                 scale="-1 1 1">
       </a-entity>
@@ -52,8 +52,8 @@
         if(firstTimeupdate==2){
           msg.innerHTML += "ontimeupdate; ";
           if (location.search.indexOf("debug")<0){
-            //document.getElementById("vcontain").style.display="none";
-            //msg.style.display="none";
+            document.getElementById("scene").style = 'position: absolute;top: 0px';
+            msg.style.display="none";
           }
           
         }
