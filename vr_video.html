@@ -2,26 +2,30 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>全景视频</title>
+    <title>全景视频11</title>
     <meta name="description" content="全景视频">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="x5-fullscreen" content="true">
+<!--     <meta name="x5-fullscreen" content="true">
     <meta name="x5-orientation" content="portrait">
-    <meta name="x5-page-mode" content="app">
-    <meta name="full-screen" content="yes">
+    <meta name="x5-page-mode" content="app"> 
+    <meta name="full-screen" content="yes">-->
     <script src="./javascripts/aframe-v0.4.0.js"></script>
+    <style>
+      a, a:active, a:hover{    font: 14px monospace}
+      .a-canvas{position: fixed;top: 0px; z-index:5}
+    </style>
   </head>
   <body>
   <div id="msg" style="display: none"></div>
-  <div id="form" style="position: fixed;top: 60px;margin: 3%;width: 88%;z-index: 10;border: orange 10px solid;background: white;opacity: 0.8;font-size: 16px;">
-    <input type="text" id="videosrc" placeholder="video src here" style="margin:10px; width: 60%; height: 24px" />
+  <div id="form" style="position: fixed;top: 60px;margin: 3%;width: 88%;z-index: 10;border: orange 10px solid;background: white;opacity: 0.8;font-size: 14px;">
+    <input type="text" id="videosrc" placeholder="input video src" style="margin:10px; width: 60%; height: 24px" />
     <a id="aplay" href="javascript:;">PLAY</a>
     <a id="ahide" href="javascript:;">HIDE</a>    
   </div>
-  <div id="vcontain" style="width: 100%; height: auto; z-index: 2; position: fixed;top: 120px;">    
-    <video id="myvideo" webkit-playsinline="true" x5-video-player-type="h5" x5-video-player-fullscreen="true"     
+  <div id="vcontain" style="width: 100%; height: auto; z-index: 2; position: fixed;top: 160px;">    
+    <video id="myvideo" webkit-playsinline="true" x5-video-player-type="h5"     
           playsinline="true" crossorigin="anonymous" autoplay="autoplay" controls="controls"
-          src="./images/vr.mp4" width="100%" height="100%" muted="muted"></video>
+          src="./images/vr.mp4" width="100%" height="100%" muted="muted" style="z-index:1"></video>
   </div>
 
     <a-scene id="scene" stats style="position: fixed;top: 0px; z-index:1">
@@ -30,7 +34,8 @@
       </a-entity>
     </a-scene>
     <script type="text/javascript">
-
+      var isAndroid = navigator.userAgent.match(/Android/i);
+      
       var $e = function(id){
         return document.getElementById.call(document, id);
       };
@@ -58,12 +63,18 @@
       });
       
       var fullScreen = function(isFullScreen){
-        if (isFullScreen){
-          $e("scene").style = "position: fixed;top: 0px; z-index:5";
+        if (isFullScreen){          
+          //$e("scene").style = "position: fixed;top: 0px; z-index:10000"; it doesn't work!
+          $e("scene").style.zIndex = 5;
+          if (isAndroid){            
+            $e("vcontain").style.top = "0px";
+            $e("vcontain").style.height = "100%";
+          }
         }
         else{
-          $e("scene").style = "position: fixed;top: 0px; z-index:1";
+          $e("scene").style.zIndex = 1;
         }
+
         
       };
 
@@ -91,7 +102,9 @@
         var firstTimeupdate = 0;
         video.addEventListener("timeupdate", function(e){
           firstTimeupdate++;        
-          if(firstTimeupdate==2){
+          if(firstTimeupdate==2 && isAndroid){
+            fullScreen(true);
+            
             msg.innerHTML += "ontimeupdate; ";
             if (location.search.indexOf("debug")<0){
               //$e("scene").style = 'position: absolute;top: 0px';
