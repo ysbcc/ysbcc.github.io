@@ -355,11 +355,11 @@ function startStateTests(textureImage, imageFilePath, finishedCb) {
 
         nextStateSet++;
         if (keepTesting && nextStateSet < stateSets.length)
-            window.setTimeout(testState, 50);
+            window.setTimeout(testState, 0);
         else
             finishedCb();
 
-    }, 50);
+    }, 0);
 }
 
 function testTextureUpload(textureSource, state) {
