@@ -1,131 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - equirectangular video panorama</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
 
+			#info {
+				position: absolute;
+				top: 0px; width: 100%;
+				color: #ffffff;
+				padding: 5px;
+				font-family:Monospace;
+				font-size:13px;
+				font-weight: bold;
+				text-align:center;
+			}
 
-<!DOCTYPE HTML>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="format-detection" content="telephone=no" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-    <title>超级会员123123123超级主角</title>
-    <script type='text/javascript'>
-        if (navigator.userAgent.toLowerCase().match(/(Mobile|ipod|iphone|android|coolpad|mmp|smartphone|midp|wap|xoom|symbian|j2me|blackberry|win ce)/i) == null) {
-            location.href = "http://vip.qq.com/clubact/2015/supervip/";
-        }
-    </script>
-    <link rel="shortcut icon" href="http://i.gtimg.cn/vipstyle/mobile/mvip/v1/img/favicon.ico" type="image/x-icon">
-    <link rel="apple-touch-icon-precomposed" href="http://i.gtimg.cn/vipstyle/mobile/mvip/v1/img/touch-icon.jpg">
-    <link rel="apple-touch-startup-image" href="http://i.gtimg.cn/vipstyle/mobile/mvip/v1/img/startup.jpg">
-    <link rel="stylesheet" href="http://i.gtimg.cn/vipstyle/special/svipvideo2015/css/style.css">
-    <script src="http://i.gtimg.cn/club/mobile_web/zepto.min.js"></script>
-    <script src="http://i.gtimg.cn/vipstyle/special/svipvideo2015/js/scale.js"></script>
-</head>
-<body ontouchstart="">
-<div class="act-wrapper">
-    <div class="act-content">
-        <div class="act-mod">
-            <img src="http://i.gtimg.cn/vipstyle/special/svipvideo2015/img/hbg01.jpg" width="320" />
-            <button class="joinbtn" id="open">开通超级会员</button>
-        </div>
-        <div class="videoarea" id="videoarea" style="height: 176px;">
+			a {
+				color: #ffffff;
+			}
+		</style>
+	</head>
+	<body>
 
-        </div>
-        <div class="act-mod">
-            <img src="http://i.gtimg.cn/vipstyle/special/svipvideo2015/img/hbg02.jpg" width="320" />
-            <button class="tapbtn" id="change_btn">点击切换主角</button>
-            <div class="svipdesc">
-                <p id="desc">播放时点击按钮立即切换到超级主角</p>
-            </div>
-            <div class="svipextra">
-                <p>温馨提醒：因浏览器限制或网络原因可能影响效果，建议在电脑上打开 http://url.cn/cqjDMj 观看 </p>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="ui-tooltips ui-tooltips-warn hide">
-    <div class="ui-tooltips-cnt ui-tooltips-cnt-link ui-border-b">
-        <i></i>当前网路不可用，请检查你的网路设置。
-    </div>
-</div>
-<!-- 弹窗开始 -->
-<article class="mod-game-dialog hide">
-    <div class="mod-game-dialog-content">
-        <div class="mod-txt">本视频只支持微信播放，请在微信上观看！ </div>
-        <div class="mod-btn">
-            <!-- 按钮字数不换行的情况下可以两个或一个 -->
-            <button class="embed-btn-mod" onclick="mqq && mqq.ui.popBack();window.opener = null;window.open('','_self');window.close();window.location.href='http://m.vip.qq.com/';">确定</button>
-        </div>
-    </div>
-</article>
-<!-- 弹窗结束 -->
-<script src="http://imgcache.gtimg.cn/tencentvideo_v1/tvp/js/tvp.player_v2_html5.js"></script>
-<script src="http://qzs.qq.com/tencentvideo_v1/js/txv.twist_video_mobile.min.js"></script>
-<script src="http://pub.idqqimg.com/qqmobile/qqapi.js?_bid=152"></script>
-<script type='text/javascript'>
+		<div id="container"></div>
 
-    window.is_weixin = function(){
-        var ua = navigator.userAgent.toLowerCase();
-        return ua.match(/MicroMessenger/i)=="micromessenger";
-    }
-    window.getQueryString = function(name) {
-        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
-        var r = window.location.search.substr(1).match(reg);
-        if (r != null) return unescape(r[2]); return null;
-    }
-    window.ozReport = function(id){
-        $.ajax({dataType:'jsonp',url:'http://pf.vip.qq.com/common/oz.php?ver=3&actid=512874&opid=2&clk='+ id +'&pvsrc='+(getQueryString('pvsrc')||0)+'&labels=19,22&ext=&msg=&club=0&t='+(new Date()).getTime()});
-    };
+		<script src="/javascripts/three/three.js"></script>
 
-    var vi1 = new tvp.VideoInfo();
-    var vi2 = new tvp.VideoInfo();
-    vi1.setVid('y0151qv0jqb');
-    vi2.setVid('l0151qlsy3y');
+		<script>
 
+			var camera, scene, renderer;
 
-    if(!is_weixin()){
-        $('.mod-game-dialog').show();
-    }
+			var texture_placeholder,
+			isUserInteracting = false,
+			onMouseDownMouseX = 0, onMouseDownMouseY = 0,
+			lon = 0, onMouseDownLon = 0,
+			lat = 0, onMouseDownLat = 0,
+			phi = 0, theta = 0,
+			distance = 500;
 
-    var p = new Video2in1.Player();
-    p.create({
-        width: $("#videoarea").width(),
-        height: $("#videoarea").height(),
-        video: [vi1, vi2],
-        modId: "videoarea"
-    });
+			init();
+			animate();
 
-    var curentVedio = 1;
-    var lastClickTime = 0;
-    $("#change_btn").click(function(){
-        var now = +new Date();
-        if (now - lastClickTime <= 800){
-            return;
-        }
-        lastClickTime = now;
-//        if (p["getPlaytime"]() >= 62){
-//            p.reverse(1);
-//            $("#desc").html("播放时点击按钮立即切换到超级主角");
-//            return;
-//        }
-        ozReport(102+curentVedio);
-        curentVedio = 3 - curentVedio;
-        var map = ["", "播放时点击按钮立即切换到超级主角", "播放时点击按钮立即切换到普通主角"];
-        $("#desc").html(map[curentVedio]);
-        p.reverse(curentVedio);
-    });
+			function init() {
 
-    $("#open").click(function(){
-        location.href = "http://m.vip.qq.com/clubact/2015/spring/index.html?ADTAG=GN";
-    });
-</script>
-<script type='text/javascript' src='http://pingjs.qq.com/ping.js'></script>
-<script type='text/javascript'>
-    pgvMain && pgvMain();
-    $(window).bind('load',function(){
-        ozReport(102);
-    });
-</script>
-</body>
+				var container, mesh;
+
+				container = document.getElementById( 'container' );
+
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1100 );
+				camera.target = new THREE.Vector3( 0, 0, 0 );
+
+				scene = new THREE.Scene();
+
+				var geometry = new THREE.SphereBufferGeometry( 500, 60, 40 );
+				geometry.scale( - 1, 1, 1 );
+
+				var video = document.createElement( 'video' );
+				video.width = 640;
+				video.height = 360;
+				video.loop = true;
+				video.muted = true;
+				video.src = "/images/vr.mp4";
+				video.setAttribute( 'webkit-playsinline', 'webkit-playsinline' );
+				video.play();
+
+				var texture = new THREE.VideoTexture( video );
+				texture.minFilter = THREE.LinearFilter;
+				texture.format = THREE.RGBFormat;
+
+				var material   = new THREE.MeshBasicMaterial( { map : texture } );
+
+				mesh = new THREE.Mesh( geometry, material );
+
+				scene.add( mesh );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+
+				document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+				document.addEventListener( 'wheel', onDocumentMouseWheel, false );
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function onDocumentMouseDown( event ) {
+
+				event.preventDefault();
+
+				isUserInteracting = true;
+
+				onPointerDownPointerX = event.clientX;
+				onPointerDownPointerY = event.clientY;
+
+				onPointerDownLon = lon;
+				onPointerDownLat = lat;
+
+			}
+
+			function onDocumentMouseMove( event ) {
+
+				if ( isUserInteracting === true ) {
+
+					lon = ( onPointerDownPointerX - event.clientX ) * 0.1 + onPointerDownLon;
+					lat = ( event.clientY - onPointerDownPointerY ) * 0.1 + onPointerDownLat;
+
+				}
+
+			}
+
+			function onDocumentMouseUp( event ) {
+
+				isUserInteracting = false;
+
+			}
+
+			function onDocumentMouseWheel( event ) {
+
+				distance += event.deltaY * 0.05;
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+				update();
+
+			}
+
+			function update() {
+
+				lat = Math.max( - 85, Math.min( 85, lat ) );
+				phi = THREE.Math.degToRad( 90 - lat );
+				theta = THREE.Math.degToRad( lon );
+
+				camera.position.x = distance * Math.sin( phi ) * Math.cos( theta );
+				camera.position.y = distance * Math.cos( phi );
+				camera.position.z = distance * Math.sin( phi ) * Math.sin( theta );
+
+				camera.lookAt( camera.target );
+
+				/*
+				// distortion
+				camera.position.copy( camera.target ).negate();
+				*/
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+	</body>
 </html>

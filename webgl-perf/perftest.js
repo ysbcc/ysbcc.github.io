@@ -240,55 +240,57 @@ function isVideoSource(filePath) {
     return filePath.endsWith(".mp4");
 }
 
+function initVideo(filePath, nextIndex){
+    var textureSource = document.getElementById("v");
+    textureSource.onerror = function() {
+        var err = "unknown error";
+
+        switch(textureSource.error.code) {
+        case 1: err = "video loading aborted"; break;
+        case 2: err = "network loading error"; break;
+        case 3: err = "video decoding failed / corrupted data or unsupported codec"; break;
+        case 4: err = "video not supported"; break;
+        }
+
+        log("Error: " + err + " (errorcode="+textureSource.error.code+")", "color:red;");
+    };
+
+    textureSource.oncanplay = function() {
+        textureSource.width = textureSource.videoWidth;
+        textureSource.height = textureSource.videoHeight;
+        console.log(filePath, nextIndex);
+        startStateTests(textureSource, filePath, function() {
+            textureSource.pause();
+            startTestOfNextTexture(nextIndex + 1);
+        });
+    };
+    return textureSource;
+}
+
 function startTestOfNextTexture(nextIndex) {
     if (nextIndex < sourceFilePaths.length) {
-        var filePath = "media/" + sourceFilePaths[nextIndex];
+        filePath = "media/" + sourceFilePaths[nextIndex];
 
         var textureSource;
 
         // load video texture
         if (isVideoSource(filePath)) {
             // create a video element and start the load
-            textureSource = document.createElement("video");
-            textureSource.autoplay = true;
-            textureSource.loop = false;
-
-            textureSource.onerror = function() {
-                var err = "unknown error";
-
-                switch(textureSource.error.code) {
-                case 1: err = "video loading aborted"; break;
-                case 2: err = "network loading error"; break;
-                case 3: err = "video decoding failed / corrupted data or unsupported codec"; break;
-                case 4: err = "video not supported"; break;
-                }
-
-                log("Error: " + err + " (errorcode="+textureSource.error.code+")", "color:red;");
-            };
-
-            textureSource.oncanplay = function videoLoaded() {
-                textureSource.width = textureSource.videoWidth;
-                textureSource.height = textureSource.videoHeight;
-                startStateTests(textureSource, filePath, function() {
-                    textureSource.pause();
-                    startTestOfNextTexture(nextIndex + 1);
-                });
-            };
-
-            // try to disable the iPhone video fullscreen mode:
-            textureSource.setAttribute("playsinline", "");
-            textureSource.setAttribute("webkit-playsinline", "");
+            textureSource = initVideo(filePath, nextIndex);
+            textureSource.src = filePath;
+            //textureSource.play();
         }
         // load image texture
         else {
             // create an image element and start the load
-            textureSource = new Image();
+            var img = new Image();
+            img.src = filePath;
             textureSource.onload = function() {
-                startStateTests(textureSource, filePath, function() { startTestOfNextTexture(nextIndex + 1); });
+                startStateTests(img, filePath, function() { startTestOfNextTexture(nextIndex + 1); });
             }
         }
 
-        textureSource.src = filePath;
+
     }
     else {
         keepTesting = false;
