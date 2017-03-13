@@ -11,7 +11,7 @@
 <title>double</title>
 <head>
 <style>
-
+body {height:100%}
 </style>
 
 
@@ -19,6 +19,8 @@
 <body>  
 	<div id="mod1">
 	</div>	 
+	<div style=" height:100px; margin:20px; border:10px solid #888">
+	</div>
 </body>  
 <script src="//imgcache.gtimg.cn/tencentvideo_v1/tvp/js/tvp.player_v2_html5.js"></script>
 <script src="//qzs.qq.com/tencentvideo_v1/js/txv.twist_video.min.js"></script>
@@ -31,8 +33,9 @@
     var player = new Video2in1.Player();
     player.create({
         modId: 'mod1',
-        width: 960,
-        height: 540,
+        width: 375,
+        height: 210,
+		autoplay : true,
         video: [video1, video2]
     });
 	
