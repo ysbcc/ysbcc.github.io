@@ -237,7 +237,7 @@ function drawGeometry() {
 // ---------- tests
 
 function isVideoSource(filePath) {
-    return filePath.endsWith(".mp4");
+    return filePath.indexOf(".mp4") > 0;
 }
 
 function initVideo(filePath, nextIndex){
