@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,minimal-ui" />
+
+<title>double</title>
+<head>
+<style>
+
+</style>
+
+
+</head>
+<body>  
+	<div id="mod1">
+	</div>	 
+</body>  
+<script src="//imgcache.gtimg.cn/tencentvideo_v1/tvp/js/tvp.player_v2_html5.js"></script>
+<script src="//qzs.qq.com/tencentvideo_v1/js/txv.twist_video.min.js"></script>
+<script>
+    var video1 = new tvp.VideoInfo(),
+	video2 = new tvp.VideoInfo();
+    video1.setVid('e0016q028dw');//给视频1指定vid
+    video2.setVid('f0016url2rq');//给视频2指定vid
+
+    var player = new Video2in1.Player();
+    player.create({
+        modId: 'mod1',
+        width: 960,
+        height: 540,
+        video: [video1, video2]
+    });
+	
+	document.body.addEventListener("click", function(){
+player.reverse();
+});
+</script>  
+</html> 
