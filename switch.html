@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>switch</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
+            body {
+                background-color: #000000;
+                margin: 0px;
+                overflow: hidden;
+            }
+            #info {
+                position: absolute;
+                top: 0px; width: 100%;
+                color: #ffffff;
+                padding: 5px;
+                font-family:Monospace;
+                font-size:13px;
+                font-weight: bold;
+                text-align:center;
+            }
+            a {
+                color: #ffffff;
+            }
+        </style>
+    </head>
+    <body>
+    <div style="position: fixed;width: 90px;height: 20px;right: 0px; bottom:10px; border: 10px solid #888;text-align: center;padding: 8px; z-index: 999;">
+        <a id="ctrl" href="javascript:;">Tap to PLAY</a>
+    </div>
+    <div id="top" style="position: fixed;width: 100%; height: 300px; top:0px;"></div>
+    <div id="bot" style="position: fixed;width: 100%; height: 200px; bottom: 10px; color:red"></div>
+        <div id="container"></div>
+
+        <script src="/javascripts/three/three.js"></script>
+        <script src="/javascripts/three/OrbitControls.js"></script>
+        <script src="/javascripts/three/stats.min.js"></script>
+        <script>
+            var camera, scene, renderer, controls, clock, stats;
+            var texture_placeholder,
+            isUserInteracting = false,
+            onMouseDownMouseX = 0, onMouseDownMouseY = 0,
+            lon = 0, onMouseDownLon = 0,
+            lat = 0, onMouseDownLat = 0,
+            phi = 0, theta = 0,
+            distance = 500,
+            onPointerDownPointerX = 0,
+            onPointerDownPointerY = 0,
+            onPointerDownLon = 0,
+            onPointerDownLat = 0;
+            
+            var bot = document.getElementById("bot");
+            var ctrl = document.getElementById("ctrl");
+
+            init();
+            animate();
+
+            function createVideo(src){
+                var video = document.createElement( 'video' );
+                video.width = 150;
+                video.height = 100;
+                video.loop = true;
+                //video.muted = true;
+                //video.controls = "controls";
+                video.src = src;
+                video.setAttribute( 'webkit-playsinline', '' );
+                video.setAttribute( 'playsinline', '' );
+                document.getElementById("top").appendChild(video);
+                video.addEventListener("timeupdate", function(){
+                    log(src + ":" + video.currentTime.toFixed(2));
+                });
+                return video;
+            }
+
+            
+            function log(txt){
+                bot.innerHTML = txt + "<br/>" + bot.innerHTML;
+            }
+            var time;            
+            var container, mesh;
+
+            function init() {
+                
+                container = document.getElementById( 'container' );
+                camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1100 );
+                camera.target = new THREE.Vector3( 0, 0, 0 );
+
+
+
+
+                scene = new THREE.Scene();
+                var geometry = new THREE.SphereBufferGeometry( 500, 60, 40 );
+                geometry.scale( - 1, 1, 1 );
+                var video = createVideo("images/360.mp4");
+                var video2 = createVideo("images/720.mp4");
+
+                var texture = new THREE.VideoTexture( video );
+                texture.minFilter = THREE.LinearFilter;
+                texture.format = THREE.RGBFormat;
+                var material   = new THREE.MeshBasicMaterial( { map : texture } );
+                mesh = new THREE.Mesh( geometry, material );
+                scene.add( mesh );
+                renderer = new THREE.WebGLRenderer();
+                renderer.setPixelRatio( window.devicePixelRatio );
+                renderer.setSize( window.innerWidth, window.innerHeight );
+                container.appendChild( renderer.domElement );
+                document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+                document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+                document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+                document.addEventListener( 'wheel', onDocumentMouseWheel, false );
+                window.addEventListener( 'resize', onWindowResize, false );
+                
+                //鼠标控制
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.target = new THREE.Vector3(0, 0, 0);
+                clock = new THREE.Clock();
+
+                //帧率统计
+                stats = new Stats();
+                stats.domElement.style.position = 'absolute';
+                stats.domElement.style.bottom = '0px';
+                stats.domElement.style.zIndex = 10;
+                document.body.appendChild( stats.domElement );
+
+                ctrl.addEventListener("click", function(){
+                    if (time){
+                        ctrl.innerHTML = "Tap to PLAY";
+                        clearInterval(time);
+                        video.pause();
+                        video2.pause();
+                        time = null;
+                    }
+                    else{
+                        ctrl.innerHTML = "Tap to STOP";
+                        video2.play();
+                        video2.pause();
+                        video.play();
+                        var play1 = false;
+                        var tt;
+                        time = setInterval(function(){
+                            if (play1){
+                                video2.pause();
+                                video.currentTime = video2.currentTime + 0.1;
+                                video.play();
+                                tt = new THREE.VideoTexture( video );
+                                log("Switch to 360.mp4");
+                            }
+                            else{
+                                video.pause();
+                                video2.currentTime = video.currentTime + 0.1;
+                                video2.play();
+                                tt = new THREE.VideoTexture( video2 );
+                                log("Switch to 720.mp4");
+                            }
+                            play1 = !play1;
+                            tt.minFilter = THREE.LinearFilter;
+                            tt.format = THREE.RGBFormat;
+                            material.map = tt;
+
+                        }, 5000);
+                    }
+
+                });
+            }
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize( window.innerWidth, window.innerHeight );
+            }
+            function onDocumentMouseDown( event ) {
+                event.preventDefault();
+                isUserInteracting = true;
+                onPointerDownPointerX = event.clientX;
+                onPointerDownPointerY = event.clientY;
+                onPointerDownLon = lon;
+                onPointerDownLat = lat;
+            }
+            function onDocumentMouseMove( event ) {
+                if ( isUserInteracting === true ) {
+                    lon = ( onPointerDownPointerX - event.clientX ) * 0.1 + onPointerDownLon;
+                    lat = ( event.clientY - onPointerDownPointerY ) * 0.1 + onPointerDownLat;
+                }
+            }
+            function onDocumentMouseUp( event ) {
+                isUserInteracting = false;
+            }
+            function onDocumentMouseWheel( event ) {
+                distance += event.deltaY * 0.05;
+            }
+            function animate() {
+                requestAnimationFrame( animate );
+                update();
+            }
+            function update() {
+                lat = Math.max( - 85, Math.min( 85, lat ) );
+                phi = THREE.Math.degToRad( 90 - lat );
+                theta = THREE.Math.degToRad( lon );
+                camera.position.x = distance * Math.sin( phi ) * Math.cos( theta );
+                camera.position.y = distance * Math.cos( phi );
+                camera.position.z = distance * Math.sin( phi ) * Math.sin( theta );
+
+                //mesh.rotation.x += 0.01;
+                mesh.rotation.y += 0.002;
+                camera.lookAt( camera.target );
+                stats.update();
+                controls.update(clock.getDelta());
+
+                /*
+                // distortion
+                camera.position.copy( camera.target ).negate();
+                */
+                renderer.render( scene, camera );
+            }
+        </script>
+    </body>
+</html>
