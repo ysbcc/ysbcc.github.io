@@ -93,20 +93,30 @@
                     video2.pause();
                     video.play();
                     material.map = tt;
-                    log("switch to 360p:" + video.currentTime.toFixed(2));
+                    log("switch to video1:" + video.currentTime.toFixed(2));
                 }
                 else{
                     video.pause();
                     video2.play();
                     material.map = tt2;
-                    log("switch to 720p:" + video2.currentTime.toFixed(2));
+                    log("switch to video2:" + video2.currentTime.toFixed(2));
                 }
                 play1 = !play1;
             }
 
             var play1 = false;
-            var video = createVideo("images/360.mp4");
-            var video2 = createVideo("images/720.mp4");
+            var video, video2;
+            if (window.location.href.indexOf("1080") > 0){
+                video = createVideo("images/af720.mp4");
+                video2 = createVideo("images/af1080.mp4");
+            }
+            else{                
+                video = createVideo("images/360.mp4");
+                video2 = createVideo("images/720.mp4");
+            }
+
+
+
             var tt = new THREE.VideoTexture( video );
             tt.minFilter = THREE.LinearFilter;
             tt.format = THREE.RGBFormat;
@@ -150,15 +160,13 @@
                 });
                 
                 //设备在位置和方向上的改变速度
-                window.addEventListener('devicemotion', function(deviceMotion){
-                      var accGravity = deviceMotion.accelerationIncludingGravity;
-                      var rotRate = deviceMotion.rotationRate;
-                      var timestampS = deviceMotion.timeStamp / 1000;
-                      log([rotRate.alpha.toFixed(1), rotRate.beta.toFixed(1), rotRate.gamma.toFixed(1)].join(','));
-                });
-                // window.addEventListener('orientationchange', function(e){
-                //     log("orientationchange");
+                // window.addEventListener('devicemotion', function(deviceMotion){
+                //       var accGravity = deviceMotion.accelerationIncludingGravity;
+                //       var rotRate = deviceMotion.rotationRate;
+                //       var timestampS = deviceMotion.timeStamp / 1000;
+                //       log([rotRate.alpha.toFixed(1), rotRate.beta.toFixed(1), rotRate.gamma.toFixed(1)].join(','));
                 // });
+
 
                 //鼠标控制
                 controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -172,7 +180,7 @@
                 stats.domElement.style.zIndex = 10;
                 document.body.appendChild( stats.domElement );
 
-
+                var isStart = true;
                 ctrl.addEventListener("click", function(){
                     if (time){
                         ctrl.innerHTML = "Tap to PLAY";
@@ -186,18 +194,31 @@
 
                         //start playing, let both videos to buff
                         video2.play();
-                        video2.pause();
-                        video.play();
+                        //let video2 loaded then play video1
+                        video2.addEventListener("loadedmetadata", function(e){
+                            log("video2 loadedmetadata");
+                            if(isStart){
+                                video2.pause();
+                                video.play();
+                            }
+                            isStart = false;
+                        });
+                        
+                        setTimeout(function(){
+                            
+                        }, 1000);
+
+                        
                         time = setInterval(function(){
                             if (play1){
                                 //video2.pause();
-                                video.currentTime = video2.currentTime + 0.2;
+                                video.currentTime = video2.currentTime + 0.3;
                                 //video.play();
                                 //log("Switch to 360.mp4");
                             }
                             else{
                                 //video.pause();
-                                video2.currentTime = video.currentTime + 0.2;
+                                video2.currentTime = video.currentTime + 0.3;
                                 //video2.play();
                                 //log("Switch to 720.mp4");
                             }                            

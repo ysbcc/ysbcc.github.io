@@ -2,27 +2,22 @@
 <html lang="zh-CN">
 <head>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
-    <meta name="format-detection" content="telephone=no" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,minimal-ui">
 
-<title>2videos</title>
+
+<title>2 videos</title>
 <head>
 <style>
 body {height:100%}
 vcon {width: 375px}
 </style>
-
-
 </head>
 <body>  
 	<div class="vcon">
-    <video id="v1" width="100%" height="100%" x-webkit-airplay="true" webkit-playsinline="" autoplay="autoplay" playsinline="true" preload="auto" controls="controls" ></video>
+    <video id="v1" width="100%" height="100%" muted="muted" x-webkit-airplay="true" webkit-playsinline playsinline autoplay="autoplay" preload="none" controls="controls" ></video>
     </div>
     <div class="vcon">
-    <video id="v2" width="100%" height="100%" x-webkit-airplay="true" webkit-playsinline="" playsinline="true" preload="auto" controls="controls"></video>
+    <video id="v2" width="100%" height="100%" muted="muted" x-webkit-airplay="true" webkit-playsinline playsinline preload="auto" controls="controls"></video>
 	</div>	 
 	<div id="sw" style=" height:30px; margin:20px; border:10px solid #888">
     switch player2 src
@@ -30,39 +25,45 @@ vcon {width: 375px}
     <div id="msg" style=" height:100px; margin:20px; border:10px solid #888">
     tap to play
     </div>
-</body>  
-<script>
-	var $e = function(id){
-       return document.getElementById.call(document, id);
-    };
-	var src1 = "http://124.172.114.24/vhot2.qqvideo.tc.qq.com/l0171ne1fjx.mp4?vkey=F2B998FFD3290EB382206938FBD123F1930FAF1009DDD9F7C85FA5F0D60C5FC4B5CE6AA990FE71A528D7E4B5912106390D040AE42474AC64C8F1757DA151EE45932CA267280762C42C593F86671173BB3406C7CCB3716E03&br=60&platform=2&fmt=auto&level=0&sdtfrom=v3010&guid=b6c5cc03ebaffa8e0fcf58bdeb977c6c";
-    var src2 = "http://124.172.114.23/vhot2.qqvideo.tc.qq.com/o0171fmfwmf.mp4?vkey=07E73EA587DC79465859D2B99F63FF8CBFB69B50A35FA81C56B71D7A91279F9B172F5854C86581310654A08B1408B2FA28A86B2143B29FE6D2595835A3AEF0B62114FAD4952E0F05C0D65EEFA61B993044950133158D2FC5&br=60&platform=2&fmt=auto&level=0&sdtfrom=v3010&guid=b6c5cc03ebaffa8e0fcf58bdeb977c6c";
-    var bksrc = "http://124.172.114.24/vhot2.qqvideo.tc.qq.com/i0316gtik4m.mp4?sdtfrom=v3010&guid=7bc9cb8adc035b9b2854e14c48ceb88d&vkey=ACF11A9E97FBAD9BB533337898AB6798778231011C883469A9C1DB2911AD9640BFADA868F020C3417B57F7887120446702745DDA6829897DB48B5F3AEE2EBA0ECCB140CD946BE3D22103CA4EBB1F066FE2C0C853F7D6B081";
-	var msg = $e("msg");
-    var v1 = $e("v1");
-    var v2 = $e("v2");
-        
-    v1.addEventListener("playing", function(){
-        //v2.src = bksrc;
-        //msg.innerHTML += "v2 play taylor; ";
-    });
-	
-    $e("sw").addEventListener("click", function(){
-        v2.autoplay = true;
-        v2.src = bksrc;
-        msg.innerHTML += "v2.src = bksrc; ";
-    });
+    <script>
 
-    //必须有用户点击行为才能出发视频播放
-	msg.addEventListener("click", function(){
-        //这里两个视频会同时loading
-        v2.src = src2;
-        v2.play();
-        v1.src = src1;
-        v1.play();
-		
-        
-		msg.innerHTML += "v1 v2 play; ";
-	});
-</script>  
+    	var $e = function(id){
+           return document.getElementById.call(document, id);
+        };
+    	var src1 = "/images/beach.mp4";
+        var src2 = "/images/vr.mp4";
+        var bksrc = "/images/beach.mp4";
+    	var msg = $e("msg");
+        var v1 = $e("v1");
+        var v2 = $e("v2");
+            v2.src = src2;
+            v1.src = src1;
+        v1.addEventListener("playing", function(){
+            //v2.src = bksrc;
+            //msg.innerHTML += "v2 play taylor; ";
+        });
+    	
+        $e("sw").addEventListener("click", function(){
+            v2.autoplay = true;
+            v2.src = bksrc;
+            msg.innerHTML += "v2.src = bksrc; ";
+        });
+
+        //必须有用户点击行为才能出发视频播放
+    	msg.addEventListener("click", function(){
+            //这里两个视频会同时loading
+            
+            v2.play();
+            
+            v1.play();
+    		setTimeout(function(){
+                v2.autoplay = true;
+                v2.src = src2;
+                msg.innerHTML += "v2.src = bksrc; ";
+            }, 3000);
+            
+    		msg.innerHTML += "v1 v2 play; ";
+    	});
+    </script>  
+</body>  
 </html> 

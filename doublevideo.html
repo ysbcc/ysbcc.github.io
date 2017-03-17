@@ -12,6 +12,7 @@
 <head>
 <style>
 body {height:100%}
+
 </style>
 
 
@@ -22,6 +23,7 @@ body {height:100%}
 	<div id="msg" style=" height:100px; margin:20px; border:10px solid #888">
 	</div>
 </body>  
+<script src="/javascripts/three/jquery.js"></script>
 <script src="//imgcache.gtimg.cn/tencentvideo_v1/tvp/js/tvp.player_v2_html5.js"></script>
 <script src="//qzs.qq.com/tencentvideo_v1/js/txv.twist_video.min.js"></script>
 <script>
@@ -43,9 +45,16 @@ body {height:100%}
         video: [video1, video2]
     });
 	
+
 	var msg = $e("msg");
 	
 	document.body.addEventListener("click", function(){
+        var a = document.getElementsByTagName("video");
+        $(".video2in1").show()
+        a[0].style = "position: fixed;    display: block;    top: 200px;    left: 0;    width: 300px;    height: 250px;";
+        a[0].setAttribute("controls","controls");
+        a[1].style = "position: fixed;    display: block;    top: 400px;    left: 0;    width: 300px;    height: 250px;";
+        a[1].setAttribute("controls","controls");
 		player.reverse();
 		msg.innerHTML += "reverse video; ";
 	});
