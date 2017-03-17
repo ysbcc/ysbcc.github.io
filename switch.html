@@ -26,20 +26,24 @@
         </style>
     </head>
     <body>
-    <div style="position: fixed;width: 90px;height: 20px;right: 0px; bottom:10px; border: 10px solid #888;text-align: center;padding: 8px; z-index: 999;">
-        <a id="ctrl" href="javascript:;">Tap to PLAY</a>
-    </div>
-    <div id="top" style="position: fixed;width: 100%; height: 300px; top:0px;"></div>
-    <div id="bot" style="position: fixed;width: 100%; height: 200px; bottom: 10px; color:red"></div>
-        <div id="container"></div>
+        <div style="position: fixed;width: 90px;height: 20px;right: 0px; bottom:10px; border: 10px solid #888;text-align: center;padding: 8px; z-index: 9;">
+            <a id="ctrl" href="javascript:;">Tap to PLAY</a>
+        </div>
+        <div id="top" style="position: fixed;top:0px;"></div>
+        <div id="bot" style="position: fixed;height: 200px; bottom: 0px; color:red;pointer-events: none;"></div>
+        <div id="container" style="z-index: 999"></div>
 
         <script src="/javascripts/three/three.js"></script>
         <script src="/javascripts/three/OrbitControls.js"></script>
         <script src="/javascripts/three/stats.min.js"></script>
         <script>
-            var camera, scene, renderer, controls, clock, stats;
-            var texture_placeholder,
-            isUserInteracting = false,
+            var $e = function (a){
+                return "string"==typeof a ? document.getElementById(a) : a;
+            }
+
+            var camera, scene, renderer, material, clock, stats;
+            //var texture_placeholder,
+            var isUserInteracting = false,
             onMouseDownMouseX = 0, onMouseDownMouseY = 0,
             lon = 0, onMouseDownLon = 0,
             lat = 0, onMouseDownLat = 0,
@@ -50,67 +54,112 @@
             onPointerDownLon = 0,
             onPointerDownLat = 0;
             
-            var bot = document.getElementById("bot");
-            var ctrl = document.getElementById("ctrl");
+            var bot = $e("bot");
+            var time, mesh;
+            var container = $e( 'container' );
+            var ctrl = $e("ctrl");
+
+            function log(txt){
+                bot.innerHTML = txt + "<br/>" + bot.innerHTML;
+            }
+
+            function createVideo(src){
+                var v = document.createElement( 'video' );
+                v.width = 150;
+                v.height = 100;
+                v.loop = true;
+                //video.muted = true;
+                //video.controls = "controls";
+                v.src = src;
+                v.setAttribute( 'webkit-playsinline', '' );
+                v.setAttribute( 'playsinline', '' );
+                $e("top").appendChild(v);
+                v.addEventListener("timeupdate", function(){
+                    //log(src + ":" + video.currentTime.toFixed(2));
+                });
+                v.addEventListener("seeking", function(){
+                    //log(src + "seeking:" + v.currentTime.toFixed(2));
+                });
+                v.addEventListener("seeked", function(){
+                    //log(src + "seeked:" + v.currentTime.toFixed(2));
+                    switchPlaying();
+                });
+
+                return v;
+            }
+
+            function switchPlaying(){
+                if(play1){
+                    video2.pause();
+                    video.play();
+                    material.map = tt;
+                    log("switch to 360p:" + video.currentTime.toFixed(2));
+                }
+                else{
+                    video.pause();
+                    video2.play();
+                    material.map = tt2;
+                    log("switch to 720p:" + video2.currentTime.toFixed(2));
+                }
+                play1 = !play1;
+            }
+
+            var play1 = false;
+            var video = createVideo("images/360.mp4");
+            var video2 = createVideo("images/720.mp4");
+            var tt = new THREE.VideoTexture( video );
+            tt.minFilter = THREE.LinearFilter;
+            tt.format = THREE.RGBFormat;
+            var tt2 = new THREE.VideoTexture( video2 );
+            tt2.minFilter = THREE.LinearFilter;
+            tt2.format = THREE.RGBFormat;
+
+
 
             init();
             animate();
 
-            function createVideo(src){
-                var video = document.createElement( 'video' );
-                video.width = 150;
-                video.height = 100;
-                video.loop = true;
-                //video.muted = true;
-                //video.controls = "controls";
-                video.src = src;
-                video.setAttribute( 'webkit-playsinline', '' );
-                video.setAttribute( 'playsinline', '' );
-                document.getElementById("top").appendChild(video);
-                video.addEventListener("timeupdate", function(){
-                    log(src + ":" + video.currentTime.toFixed(2));
-                });
-                return video;
-            }
-
-            
-            function log(txt){
-                bot.innerHTML = txt + "<br/>" + bot.innerHTML;
-            }
-            var time;            
-            var container, mesh;
-
             function init() {
                 
-                container = document.getElementById( 'container' );
-                camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1100 );
-                camera.target = new THREE.Vector3( 0, 0, 0 );
-
-
-
+                camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1100 );//摄像机角度
+                //camera.target = new THREE.Vector3( 0, 0, 0 );
+                camera.position.y = 0;
+                camera.position.z = 400;
 
                 scene = new THREE.Scene();
-                var geometry = new THREE.SphereBufferGeometry( 500, 60, 40 );
+                var geometry = new THREE.SphereBufferGeometry( 500, 60, 40 );//半径，水平分片，垂直分片
                 geometry.scale( - 1, 1, 1 );
-                var video = createVideo("images/360.mp4");
-                var video2 = createVideo("images/720.mp4");
 
-                var texture = new THREE.VideoTexture( video );
-                texture.minFilter = THREE.LinearFilter;
-                texture.format = THREE.RGBFormat;
-                var material   = new THREE.MeshBasicMaterial( { map : texture } );
+                material   = new THREE.MeshBasicMaterial( { map : tt } );
                 mesh = new THREE.Mesh( geometry, material );
                 scene.add( mesh );
+
                 renderer = new THREE.WebGLRenderer();
                 renderer.setPixelRatio( window.devicePixelRatio );
                 renderer.setSize( window.innerWidth, window.innerHeight );
                 container.appendChild( renderer.domElement );
-                document.addEventListener( 'mousedown', onDocumentMouseDown, false );
-                document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-                document.addEventListener( 'mouseup', onDocumentMouseUp, false );
-                document.addEventListener( 'wheel', onDocumentMouseWheel, false );
-                window.addEventListener( 'resize', onWindowResize, false );
+
+                // document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+                // document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+                // document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+                // document.addEventListener( 'wheel', onDocumentMouseWheel, false );
+                // window.addEventListener( 'resize', onWindowResize, false );
+
+                window.addEventListener('deviceorientation', function(e){
+                    //log("deviceorientation");
+                });
                 
+                //设备在位置和方向上的改变速度
+                window.addEventListener('devicemotion', function(deviceMotion){
+                      var accGravity = deviceMotion.accelerationIncludingGravity;
+                      var rotRate = deviceMotion.rotationRate;
+                      var timestampS = deviceMotion.timeStamp / 1000;
+                      log([rotRate.alpha.toFixed(1), rotRate.beta.toFixed(1), rotRate.gamma.toFixed(1)].join(','));
+                });
+                // window.addEventListener('orientationchange', function(e){
+                //     log("orientationchange");
+                // });
+
                 //鼠标控制
                 controls = new THREE.OrbitControls(camera, renderer.domElement);
                 controls.target = new THREE.Vector3(0, 0, 0);
@@ -123,6 +172,7 @@
                 stats.domElement.style.zIndex = 10;
                 document.body.appendChild( stats.domElement );
 
+
                 ctrl.addEventListener("click", function(){
                     if (time){
                         ctrl.innerHTML = "Tap to PLAY";
@@ -133,76 +183,75 @@
                     }
                     else{
                         ctrl.innerHTML = "Tap to STOP";
+
+                        //start playing, let both videos to buff
                         video2.play();
                         video2.pause();
                         video.play();
-                        var play1 = false;
-                        var tt;
                         time = setInterval(function(){
                             if (play1){
-                                video2.pause();
-                                video.currentTime = video2.currentTime + 0.1;
-                                video.play();
-                                tt = new THREE.VideoTexture( video );
-                                log("Switch to 360.mp4");
+                                //video2.pause();
+                                video.currentTime = video2.currentTime + 0.2;
+                                //video.play();
+                                //log("Switch to 360.mp4");
                             }
                             else{
-                                video.pause();
-                                video2.currentTime = video.currentTime + 0.1;
-                                video2.play();
-                                tt = new THREE.VideoTexture( video2 );
-                                log("Switch to 720.mp4");
-                            }
-                            play1 = !play1;
-                            tt.minFilter = THREE.LinearFilter;
-                            tt.format = THREE.RGBFormat;
-                            material.map = tt;
+                                //video.pause();
+                                video2.currentTime = video.currentTime + 0.2;
+                                //video2.play();
+                                //log("Switch to 720.mp4");
+                            }                            
 
                         }, 5000);
                     }
 
                 });
             }
-            function onWindowResize() {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize( window.innerWidth, window.innerHeight );
-            }
-            function onDocumentMouseDown( event ) {
-                event.preventDefault();
-                isUserInteracting = true;
-                onPointerDownPointerX = event.clientX;
-                onPointerDownPointerY = event.clientY;
-                onPointerDownLon = lon;
-                onPointerDownLat = lat;
-            }
-            function onDocumentMouseMove( event ) {
-                if ( isUserInteracting === true ) {
-                    lon = ( onPointerDownPointerX - event.clientX ) * 0.1 + onPointerDownLon;
-                    lat = ( event.clientY - onPointerDownPointerY ) * 0.1 + onPointerDownLat;
-                }
-            }
-            function onDocumentMouseUp( event ) {
-                isUserInteracting = false;
-            }
-            function onDocumentMouseWheel( event ) {
-                distance += event.deltaY * 0.05;
-            }
+
+            // function onWindowResize() {
+            //     camera.aspect = window.innerWidth / window.innerHeight;
+            //     camera.updateProjectionMatrix();
+            //     renderer.setSize( window.innerWidth, window.innerHeight );
+            // }
+            // function onDocumentMouseDown( event ) {
+            //     event.preventDefault();
+            //     isUserInteracting = true;
+            //     onPointerDownPointerX = event.clientX;
+            //     onPointerDownPointerY = event.clientY;
+            //     onPointerDownLon = lon;
+            //     onPointerDownLat = lat;
+            // }
+            // function onDocumentMouseMove( event ) {
+            //     if ( isUserInteracting === true ) {
+            //         lon = ( onPointerDownPointerX - event.clientX ) * 0.1 + onPointerDownLon;
+            //         lat = ( event.clientY - onPointerDownPointerY ) * 0.1 + onPointerDownLat;
+            //     }
+            // }
+            // function onDocumentMouseUp( event ) {
+            //     isUserInteracting = false;
+            // }
+            // function onDocumentMouseWheel( event ) {
+            //     distance += event.deltaY * 0.05;
+            // }
+
+
             function animate() {
                 requestAnimationFrame( animate );
                 update();
             }
             function update() {
-                lat = Math.max( - 85, Math.min( 85, lat ) );
-                phi = THREE.Math.degToRad( 90 - lat );
-                theta = THREE.Math.degToRad( lon );
-                camera.position.x = distance * Math.sin( phi ) * Math.cos( theta );
-                camera.position.y = distance * Math.cos( phi );
-                camera.position.z = distance * Math.sin( phi ) * Math.sin( theta );
+                // lat = Math.max( - 85, Math.min( 85, lat ) );
+                // phi = THREE.Math.degToRad( 90 - lat );
+                // theta = THREE.Math.degToRad( lon );
+                // camera.position.x = distance * Math.sin( phi ) * Math.cos( theta );
+                // camera.position.y = distance * Math.cos( phi );
+                // camera.position.z = distance * Math.sin( phi ) * Math.sin( theta );
 
                 //mesh.rotation.x += 0.01;
-                mesh.rotation.y += 0.002;
-                camera.lookAt( camera.target );
+                //mesh.rotation.y += 0.002;
+                //camera.lookAt( camera.target );
+                //tt.needsUpdate = true;
+                //tt2.needsUpdate = true;
                 stats.update();
                 controls.update(clock.getDelta());
 

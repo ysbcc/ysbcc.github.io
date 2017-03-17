@@ -14,7 +14,7 @@
 	</head>
 	<body>
 		<div id="mod_player" style="display:;">
-			<video id="vv" controls="controls" loop="loop" webkit-playsinline x-webkit-airplay="true" data-playing-loadingad="0" preload="none" src="/images/avengers.mp4"></video>
+			<video id="vv" controls="controls" loop="loop" webkit-playsinline playsinline data-playing-loadingad="0" preload="none" src="/images/beach.mp4"></video>
 			<canvas width=640 height=256 id="thecanvas" style="border: 5px #666666 solid;display:none"></canvas>  
 		</div>
 
@@ -127,9 +127,11 @@
 				spotLight.name = 'Spot Light';
 				scene.add( spotLight );
 				
+				//圆形
+				var geometry = new THREE.SphereBufferGeometry( 100, 64, 64 );
 				
 				//正方体
-				var geometry = new THREE.BoxGeometry( 100, 100, 100 );//new THREE.SphereGeometry(32, 100);			
+				//var geometry = new THREE.BoxGeometry( 100, 100, 100 );//new THREE.SphereGeometry(32, 100);			
 				var texture = new THREE.Texture( canvas );				
 				texture.needsUpdate = true;
 				//var texture = THREE.ImageUtils.loadTexture( 'images/crate.gif' );
@@ -139,13 +141,13 @@
 				cube.castShadow = true;
 				cube.receiveShadow = true;
 				cube.position.x = 0;
-				cube.position.y = 100;
+				cube.position.y = 120;
 				cube.position.z = 0;
 				scene.add( cube );
 
 											
 				//地板
-				var groundGeometry = new THREE.BoxGeometry( 500, 10, 500 );//new THREE.PlaneGeometry(10, 10, 1, 1);
+				var groundGeometry = new THREE.BoxGeometry( 500, 5, 500 );//new THREE.PlaneGeometry(10, 10, 1, 1);
 				var gtexture = THREE.ImageUtils.loadTexture( 'images/texture.jpg' );
 				gtexture.wrapS = THREE.RepeatWrapping;
 				gtexture.wrapT = THREE.RepeatWrapping;
@@ -175,7 +177,7 @@
 				
 				//循环
 				function render() {
-					cube.rotation.x += 0.01;
+					//cube.rotation.x += 0.01;
 					cube.rotation.y += 0.01;
 					controls.update(clock.getDelta());
 					stats.update();
