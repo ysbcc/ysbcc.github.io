@@ -195,6 +195,7 @@
                 stats.domElement.style.zIndex = 10;
                 document.body.appendChild( stats.domElement );
 
+                var isFirstPlaying = true;
                 ctrl.addEventListener("click", function(){
                     if (time){
                         ctrl.innerHTML = "PLAY";
@@ -202,20 +203,25 @@
                         video.pause();
                         video2.pause();
                         time = null;
+                        isFirstPlaying = true;
                     }
                     else{
                         ctrl.innerHTML = "STOP";
-                        //start playing, let both videos to buff
-                        video2.play();
+                        //trigger both videos to play
+                        video.play();
+                        video2.play();                                                
+                        var playingHandler = function(e){
+                            video.pause();
+                            video.removeEventListener("playing", playingHandler);
+                        };
 
-                        //let video2 loaded then play video1. It only works on setTimeout!
-                        setTimeout(function(){
+                        var playingHandler2 = function(e){
+                            log("start playing");                            
                             video2.pause();
                             video.play();
-                            log("start video");
                             material.map = tt;
-
                             time = setInterval(function(){
+                                //log("loop");
                                 if (play1){
                                     video.currentTime = video2.currentTime + switchDelay;
                                 }
@@ -223,9 +229,15 @@
                                     video2.currentTime = video.currentTime + switchDelay;
                                 }
                             }, 5000);
+                            video2.removeEventListener("playing", playingHandler2);
+                            video.removeEventListener("playing", playingHandler);
+                        };
 
-                        }, 2000);                        
-                        
+                        if (isFirstPlaying){
+                            video.addEventListener("playing", playingHandler);
+                            video2.addEventListener("playing", playingHandler2);                            
+                            isFirstPlaying = false;
+                        }                                                
                     }
 
                 });
