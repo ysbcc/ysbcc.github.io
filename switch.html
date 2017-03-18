@@ -208,7 +208,7 @@
                         //start playing, let both videos to buff
                         video2.play();
 
-                        //let video2 loaded then play video1
+                        //let video2 loaded then play video1. It only works on setTimeout!
                         setTimeout(function(){
                             video2.pause();
                             video.play();
@@ -224,7 +224,7 @@
                                 }
                             }, 5000);
 
-                        }, 1000);                        
+                        }, 2000);                        
                         
                     }
 
