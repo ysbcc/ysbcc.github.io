@@ -105,17 +105,17 @@
             }
 
             var play1 = false;
+            var switchDelay = 0.2;
             var video, video2;
             if (window.location.href.indexOf("1080") > 0){
                 video = createVideo("images/af720.mp4");
                 video2 = createVideo("images/af1080.mp4");
+                switchDelay = 0.3;
             }
             else{                
                 video = createVideo("images/360.mp4");
                 video2 = createVideo("images/720.mp4");
             }
-
-
 
             var tt = new THREE.VideoTexture( video );
             tt.minFilter = THREE.LinearFilter;
@@ -123,8 +123,6 @@
             var tt2 = new THREE.VideoTexture( video2 );
             tt2.minFilter = THREE.LinearFilter;
             tt2.format = THREE.RGBFormat;
-
-
 
             init();
             animate();
@@ -180,7 +178,7 @@
                 stats.domElement.style.zIndex = 10;
                 document.body.appendChild( stats.domElement );
 
-                var isStart = true;
+                
                 ctrl.addEventListener("click", function(){
                     if (time){
                         ctrl.innerHTML = "Tap to PLAY";
@@ -195,30 +193,33 @@
                         //start playing, let both videos to buff
                         video2.play();
                         //let video2 loaded then play video1
-                        video2.addEventListener("loadedmetadata", function(e){
-                            log("video2 loadedmetadata");
-                            if(isStart){
-                                video2.pause();
-                                video.play();
-                            }
-                            isStart = false;
-                        });
+                        // video2.addEventListener("loadedmetadata", function(e){
+                        //     log("video2 loadedmetadata");
+                        //     if(isStart){
+                        //         video2.pause();
+                        //         video.play();
+                        //         log("start video1");
+                        //     }
+                        //     isStart = false;
+                        // });
                         
                         setTimeout(function(){
-                            
+                            video2.pause();
+                            video.play();
+                            log("start video1");
                         }, 1000);
 
                         
                         time = setInterval(function(){
                             if (play1){
                                 //video2.pause();
-                                video.currentTime = video2.currentTime + 0.3;
+                                video.currentTime = video2.currentTime + switchDelay;
                                 //video.play();
                                 //log("Switch to 360.mp4");
                             }
                             else{
                                 //video.pause();
-                                video2.currentTime = video.currentTime + 0.3;
+                                video2.currentTime = video.currentTime + switchDelay;
                                 //video2.play();
                                 //log("Switch to 720.mp4");
                             }                            
