@@ -34,15 +34,17 @@
         <div id="container" style="z-index: 999"></div>
 
         <script src="/javascripts/three/three.js"></script>
-        <script src="/javascripts/three/OrbitControls.js"></script>
+        <!-- <script src="/javascripts/three/OrbitControls.js"></script> -->
+        <script src="/javascripts/three/DeviceOrientationControls.js"></script>
         <script src="/javascripts/three/stats.min.js"></script>
         <script>
             var $e = function (a){
                 return "string"==typeof a ? document.getElementById(a) : a;
             }
 
-            var camera, scene, renderer, material, clock, stats;
-            //var texture_placeholder,
+            var camera, scene, renderer, material, clock, stats, time, mesh, controlDevice, controlTap;
+
+            /* these are the pc web controls
             var isUserInteracting = false,
             onMouseDownMouseX = 0, onMouseDownMouseY = 0,
             lon = 0, onMouseDownLon = 0,
@@ -53,9 +55,9 @@
             onPointerDownPointerY = 0,
             onPointerDownLon = 0,
             onPointerDownLat = 0;
-            
-            var bot = $e("bot");
-            var time, mesh;
+            */
+
+            var bot = $e("bot");            
             var container = $e( 'container' );
             var ctrl = $e("ctrl");
 
@@ -167,9 +169,11 @@
 
 
                 //鼠标控制
-                controls = new THREE.OrbitControls(camera, renderer.domElement);
-                controls.target = new THREE.Vector3(0, 0, 0);
-                clock = new THREE.Clock();
+                // controlTap = new THREE.OrbitControls(camera, renderer.domElement);                
+                // controlTap.target = new THREE.Vector3(0, 0, 0);
+                // clock = new THREE.Clock();
+
+                controlDevice = new THREE.DeviceOrientationControls(camera);
 
                 //帧率统计
                 stats = new Stats();
@@ -230,6 +234,13 @@
                 });
             }
 
+            window.addEventListener('resize', function() {
+
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize( window.innerWidth, window.innerHeight );
+
+            }, false);
             // function onWindowResize() {
             //     camera.aspect = window.innerWidth / window.innerHeight;
             //     camera.updateProjectionMatrix();
@@ -275,8 +286,8 @@
                 //tt.needsUpdate = true;
                 //tt2.needsUpdate = true;
                 stats.update();
-                controls.update(clock.getDelta());
-
+                //controlTap.update(clock.getDelta());
+                controlDevice.update();
                 /*
                 // distortion
                 camera.position.copy( camera.target ).negate();
