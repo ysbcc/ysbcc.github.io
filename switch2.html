@@ -121,13 +121,28 @@
                         isSwitching = false;
                         switchDelay = (Date.now() - timer)/1000.0;
                         log("Finished switching to " + this.getAttribute("bitrate") + ", cost " + switchDelay);
-                        material.map = curTT;                        
-                        if(v == video){
-                            video2.src = "";
-                        }
-                        else{
-                            video.src = "";
-                        }
+                        //v.pause();
+
+                        //即使seek到固定时间，但新视频第一次渲染还是会取到视频的第一帧画面
+                        var tmpgeometry = new THREE.SphereBufferGeometry( 10, 60, 60 );//半径，水平分片，垂直分片
+                        tmpgeometry.scale( - 1, 1, 1 );
+
+                        var tmpmaterial   = new THREE.MeshBasicMaterial( { map : curTT } );
+                        tmpmesh = new THREE.Mesh( tmpgeometry, tmpmaterial );
+                        scene.add( tmpmesh );
+
+                        setTimeout(function(){
+                            //v.play();
+                            //scene.remove( tmpmesh );
+                            material.map = curTT;                        
+                            if(v == video){
+                                video2.src = "";
+                            }
+                            else{
+                                video.src = "";
+                            }
+                        }, 10);
+                        
                     }      
                 });
 
