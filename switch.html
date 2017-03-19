@@ -222,6 +222,7 @@
                             material.map = tt;
                             time = setInterval(function(){
                                 //log("loop");
+                                //iphone、安卓chrome可以在视频暂停的时候seek，安卓微信好像不可以
                                 if (play1){
                                     video.currentTime = video2.currentTime + switchDelay;
                                 }
@@ -229,6 +230,7 @@
                                     video2.currentTime = video.currentTime + switchDelay;
                                 }
                             }, 5000);
+
                             video2.removeEventListener("playing", playingHandler2);
                             video.removeEventListener("playing", playingHandler);
                         };

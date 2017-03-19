@@ -14,55 +14,85 @@ vcon {width: 375px}
 </head>
 <body>  
 	<div class="vcon">
-    <video id="v1" width="100%" height="100%" muted="muted" x-webkit-airplay="true" webkit-playsinline playsinline autoplay="autoplay" preload="none" controls="controls" ></video>
+    <video id="v1" height="150" x-webkit-airplay="true" webkit-playsinline playsinline autoplay="true" preload="none" controls="controls" ></video>
     </div>
     <div class="vcon">
-    <video id="v2" width="100%" height="100%" muted="muted" x-webkit-airplay="true" webkit-playsinline playsinline preload="auto" controls="controls"></video>
+    <video id="v2"  height="150" x-webkit-airplay="true" webkit-playsinline playsinline autoplay="true" preload="auto" controls="controls"></video>
 	</div>	 
-	<div id="sw" style=" height:30px; margin:20px; border:10px solid #888">
-    switch player2 src
+	<div id="sw" style="position: fixed;width: 80px;height: 20px;right: 0px; bottom:10px; border: 10px solid #888;text-align: center;padding: 8px; z-index: 9; cursor: pointer; color: black; font-size: 20px;">
+    SWITCH
 	</div>
-    <div id="msg" style=" height:100px; margin:20px; border:10px solid #888">
-    tap to play
+    <div id="ctrl" style="position: fixed;width: 70px;height: 20px;right: 120px; bottom:10px; border: 10px solid #888;text-align: center;padding: 8px; z-index: 9; cursor: pointer; color: black; font-size: 20px;">
+        PLAY
     </div>
+    <div id="bot" style="position: fixed;height: 200px; bottom: 0px; color:red;pointer-events: none;"></div>
     <script>
 
     	var $e = function(id){
            return document.getElementById.call(document, id);
         };
-    	var src1 = "/images/beach.mp4";
-        var src2 = "/images/vr.mp4";
+        
+        var bot = $e("bot");
+        function log(txt){
+            bot.innerHTML = txt + "<br/>" + bot.innerHTML;
+        }
+
+    	var src1 = "/images/360.mp4";
+        var src2 = "/images/af1080.mp4";
         var bksrc = "/images/beach.mp4";
-    	var msg = $e("msg");
+    	var ctrl = $e("ctrl");
         var v1 = $e("v1");
         var v2 = $e("v2");
-            v2.src = src2;
-            v1.src = src1;
-        v1.addEventListener("playing", function(){
-            //v2.src = bksrc;
-            //msg.innerHTML += "v2 play taylor; ";
-        });
-    	
-        $e("sw").addEventListener("click", function(){
-            v2.autoplay = true;
-            v2.src = bksrc;
-            msg.innerHTML += "v2.src = bksrc; ";
+        v1.src = src2;
+        v2.src = src2;        
+        var firstPlay = true;
+        var isSwitching = false;
+        var currentTime = -1;
+
+        v1.addEventListener("timeupdate", function(){
+            if (v1.currentTime > currentTime){
+                //it never go back
+                currentTime = v1.currentTime;    
+            }
+            else{
+                //v1.currentTime = currentTime + 0.2;
+            }            
         });
 
-        //必须有用户点击行为才能出发视频播放
-    	msg.addEventListener("click", function(){
-            //这里两个视频会同时loading
-            
-            v2.play();
-            
+        v2.addEventListener("playing", function(){
+            if (firstPlay){
+                log("v2 firstPlay, stop");
+                v2.pause();
+                v2.src = "";
+                firstPlay = false;
+            }
+            else{
+                log("v2 playing and seeking");
+                //v2.currentTime = currentTime;
+            }
+        });
+    	//loadedmetadata, loadeddata, canplay, play, playing
+
+        v2.addEventListener("loadedmetadata", function(){
+            if (isSwitching){
+                isSwitching = false;
+                log("v2 loadedmetadata and seeking");
+                v2.currentTime = currentTime + 0.3;
+            }
+        });
+
+        $e("sw").addEventListener("click", function(){            
+            v2.src = src2;
+            isSwitching = true;
+            log("v2.src = src2");
+        });
+
+        //必须有用户点击行为才能触发视频播放
+    	ctrl.addEventListener("click", function(){
+            //这里两个视频会同时loading            
+            v2.play();            
             v1.play();
-    		setTimeout(function(){
-                v2.autoplay = true;
-                v2.src = src2;
-                msg.innerHTML += "v2.src = bksrc; ";
-            }, 3000);
-            
-    		msg.innerHTML += "v1 v2 play; ";
+    		log("v1 v2 play");
     	});
     </script>  
 </body>  
