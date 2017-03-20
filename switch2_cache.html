@@ -49,7 +49,7 @@
 
             var play1 = true;
             var currentTime = 0;
-            var switchDelay = 0.3;
+            var switchDelay = 0.5;
             var isSwitching = false;
             var video, video2, ttCover;
             var curTT;
@@ -119,13 +119,14 @@
                 v.addEventListener("playing", function(){
                     if (isSwitching){
                         isSwitching = false;
+                        switchDelay = 0.1 + (Date.now() - timer)/1000.0;
                         log("Finished switching to " + this.getAttribute("bitrate") + ", cost " + (Date.now() - timer));
                                                 
                         if(v == video){
-                            //video2.src = "";
+                            video2.pause();
                         }
                         else{
-                            //video.src = "";
+                            video.pause();
                         }
                     }  
                     material.map = curTT;    
@@ -141,7 +142,6 @@
                 timer = Date.now();
                 if(play1){
                     log("Start to switch to " + video.getAttribute("bitrate"));
-                    //video.src = src1;
                     //video.pause();
                     video.currentTime = currentTime + switchDelay;
                     video2.play();
@@ -150,7 +150,6 @@
                 }
                 else{
                     log("Start to switch to " + video2.getAttribute("bitrate"));
-                    //video2.src = src2;
                     //video2.pause();
                     video2.currentTime = currentTime + switchDelay;
                     video.play();
@@ -176,13 +175,7 @@
             video2 = createVideo(src2);
             video.setAttribute("bitrate", "v1");
             video2.setAttribute("bitrate", "v2");
-            // video2.addEventListener("loadedmetadata", function(){
-            //     if (isSwitching){
-            //         isSwitching = false;
-            //         log("video2 loadedmetadata and seeking");
-            //         video2.currentTime = currentTime + 0.3;
-            //     }
-            // });
+
 
             var tt = new THREE.VideoTexture( video );
             tt.minFilter = THREE.LinearFilter;
@@ -225,10 +218,6 @@
                 renderer.setSize( window.innerWidth, window.innerHeight );
                 container.appendChild( renderer.domElement );
 
-                window.addEventListener('deviceorientation', function(e){
-                    //log("deviceorientation");
-                });
-
                 if(!isPC)
                     controlDevice = new THREE.DeviceOrientationControls(camera);
 
@@ -257,7 +246,7 @@
 
                         var playingHandler2 = function(e){
                             log("video2 cold started");                            
-                            //video2.src = "";
+                            video2.pause();
                             video.src = src1;
                             video.play();
                             //material.map = tt;
