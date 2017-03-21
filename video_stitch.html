@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>video stitch</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
+            body {
+                background-color: #000000;
+                margin: 0px;
+                overflow: hidden;
+            }
+            #info {
+                position: absolute;
+                top: 0px; width: 100%;
+                color: #ffffff;
+                padding: 5px;
+                font-family:Monospace;
+                font-size:13px;
+                font-weight: bold;
+                text-align:center;
+            }
+            a {
+                color: #ffffff;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="ctrl" style="position: fixed;width: 70px;height: 20px;right: 0px; bottom:10px; border: 10px solid #888;text-align: center;padding: 8px; z-index: 9; cursor: pointer; color: white; font-size: 20px;">
+            PLAY
+        </div>
+        <div id="top" style="position: fixed;top:0px; height: 80; overflow: hidden;"></div>
+        <div id="bot" style="position: fixed;height: 200px; bottom: 0px; color:red;pointer-events: none;"></div>
+        <div id="container" style="z-index: 999"></div>
+
+        <script src="/javascripts/three/three.js"></script>
+        <script src="/javascripts/three/DeviceOrientationControls.js"></script>
+        <script src="/javascripts/three/stats.min.js"></script>
+        <script>
+            var $e = function (a){
+                return "string"==typeof a ? document.getElementById(a) : a;
+            }
+
+            var camera, scene, renderer, material, clock, stats, time, mesh, controlDevice, controlTap;
+            
+            var bot = $e("bot");            
+            var container = $e( 'container' );
+            var ctrl = $e("ctrl");
+
+            var play1 = true;
+            var currentTime = 0;
+            var switchDelay = 0.0;
+            var isSwitching = false;
+            var video, video2, ttCover;
+            var curTT;
+
+            var isPC = (function(){
+                var userAgentInfo = navigator.userAgent;
+                var Agents = ["Android", "iPhone",
+                            "SymbianOS", "Windows Phone",
+                            "iPad", "iPod"];
+                var flag = true;
+                for (var v = 0; v < Agents.length; v++) {
+                    if (userAgentInfo.indexOf(Agents[v]) > 0) {
+                        flag = false;
+                        break;
+                    }
+                }
+                return flag;
+            })();
+
+            function log(txt){
+                bot.innerHTML = txt + "<br/>" + bot.innerHTML;
+            }
+
+            log("video stitch");
+
+            function createVideo(src){
+                var v = document.createElement( 'video' );
+                v.height = 80;
+                v.loop = true;
+                v.autoplay = true;
+                v.controls = "controls";
+                v.src = src;
+                v.setAttribute( 'webkit-playsinline', '' );
+                v.setAttribute( 'playsinline', '' );
+                $e("top").appendChild(v);
+                v.pause(); //for pc
+                v.addEventListener("timeupdate", function(e){
+                    //log(this.getAttribute("bitrate") + " time is " + this.currentTime); 
+                    if (this.currentTime >= 9.8 && !isSwitching){   
+                        log(this.getAttribute("bitrate") + " time is " + this.currentTime.toFixed(2));                     
+                        goNext();
+                    }
+                });
+
+                v.addEventListener("loadedmetadata", function(){
+                });
+
+                v.addEventListener("seeked", function(){
+                });
+
+                v.addEventListener("playing", function(){
+                    //log(this.getAttribute("bitrate") + " is playing");
+                    if (isSwitching){
+                        switchDelay = (Date.now() - timer)/1000.0;
+                        log("switched to " + this.getAttribute("bitrate") + ", cost " + switchDelay.toFixed(2));
+                        material.map = curTT;
+                        isSwitching = false;
+                        //load next one
+                        viewIndex = (viewIndex+1) % viewList.length;
+                        if(v == video){
+                            video2.src = viewList[viewIndex];
+                            video2.pause();                            
+                        }
+                        else{
+                            video.src = viewList[viewIndex];
+                            video.pause();
+                        }    
+                        v.play();
+                    }
+                    
+                });
+
+                return v;
+            }
+
+            // var viewList = ["images/pilot 1080 180.mp4", "images/pilot 1080 200.mp4", 
+            // "images/pilot 1080 220.mp4", "images/pilot 1080 240.mp4"];
+            var viewList = ["images/girls 0.mp4","images/girls 1.mp4","images/girls 2.mp4"];
+            var viewIndex = 0;
+            var timer;
+            function goNext(){
+                isSwitching = true;
+                play1 = !play1;
+                timer = Date.now();
+                
+                if(play1){
+                    log("Start switch to " + video.getAttribute("bitrate"));
+                    //important! This can keep the new video to load and keep the old one playing
+                    //video.src = viewList[viewIndex];
+                    //video2.pause();
+                    video.play();
+                    curTT = tt;                    
+                }
+                else{
+                    log("Start switch to " + video2.getAttribute("bitrate"));
+                    //important! This can keep the new video to load and keep the old one playing
+                    //video2.src = viewList[viewIndex];
+                    //video.pause();
+                    video2.play();
+                    curTT = tt2;                 
+                }
+
+            }
+
+            //init video
+            var src1 = viewList[0], src2 = viewList[1];    
+            ttCover = new THREE.TextureLoader().load( 'images/waterfall.png' );
+
+            video = createVideo(src1);
+            video2 = createVideo(src2);
+            video.setAttribute("bitrate", "v1");
+            video2.setAttribute("bitrate", "v2");
+
+            var tt = new THREE.VideoTexture( video );
+            tt.minFilter = THREE.LinearFilter;
+            tt.format = THREE.RGBFormat;
+            var tt2 = new THREE.VideoTexture( video2 );
+            tt2.minFilter = THREE.LinearFilter;
+            tt2.format = THREE.RGBFormat;
+            curTT = tt;
+
+            //init three.js env
+            camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1100 );//摄像机角度
+            camera.target = new THREE.Vector3( 0, 0, 0 );
+
+            scene = new THREE.Scene();
+            
+            var geometry = new THREE.SphereBufferGeometry( 500, 60, 60 );//半径，水平分片，垂直分片
+            geometry.scale( - 1, 1, 1 );
+
+            material   = new THREE.MeshBasicMaterial( { map : ttCover } );
+            mesh = new THREE.Mesh( geometry, material );
+            scene.add( mesh );
+
+            renderer = new THREE.WebGLRenderer();
+            renderer.setPixelRatio( window.devicePixelRatio );
+            renderer.setSize( window.innerWidth, window.innerHeight );
+            container.appendChild( renderer.domElement );
+
+
+
+            var isFirstPlaying = true;
+            ctrl.addEventListener("click", function(){
+                if (!isFirstPlaying){
+                    ctrl.innerHTML = "PLAY";
+                    // clearInterval(time);
+                    // time = null;
+                    video.src = src1;
+                    video2.src = src2;
+                    video.pause();
+                    video2.pause();                        
+                    isFirstPlaying = true;
+                }
+                else{
+                    ctrl.innerHTML = "STOP";
+                    timer = Date.now();
+                    //trigger both videos to play
+                    video.play();
+                    video2.play();
+
+                    var playingHandler2 = function(e){
+                        log("2 videos activated");                        
+                        isSwitching = true;
+                        //video2.pause();   
+                        video.pause();                     
+                        video.play();
+
+                        //material.map = tt;
+                        // viewIndex = (viewIndex+1) % viewList.length;
+                        // video2.src = viewList[viewIndex];
+                        // video2.pause()
+
+                        // time = setInterval(function(){
+                        //     //log("loop " + play1);                                
+                        //     goNext();                                
+                        // }, 10000);
+                        video2.removeEventListener("playing", playingHandler2);
+                    };
+
+                    if (isFirstPlaying){
+                        video2.addEventListener("playing", playingHandler2);                            
+                        isFirstPlaying = false;
+                    }                                                
+                }
+
+            });
+            
+            //These are the pc web controls
+            var isUserInteracting = false,
+            onMouseDownMouseX = 0, onMouseDownMouseY = 0,
+            lon = 0, onMouseDownLon = 0,
+            lat = 0, onMouseDownLat = 0,
+            phi = 0, theta = 0,
+            distance = 500,
+            onPointerDownPointerX = 0,
+            onPointerDownPointerY = 0,
+            onPointerDownLon = 0,
+            onPointerDownLat = 0;
+
+            function initPC(){
+                document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+                document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+                document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+                document.addEventListener( 'wheel', onDocumentMouseWheel, false );
+                window.addEventListener( 'resize', onWindowResize, false );
+
+                function onWindowResize() {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize( window.innerWidth, window.innerHeight );
+                }
+                function onDocumentMouseDown( event ) {
+                    event.preventDefault();
+                    isUserInteracting = true;
+                    onPointerDownPointerX = event.clientX;
+                    onPointerDownPointerY = event.clientY;
+                    onPointerDownLon = lon;
+                    onPointerDownLat = lat;
+                }
+                function onDocumentMouseMove( event ) {
+                    if ( isUserInteracting === true ) {
+                        lon = ( onPointerDownPointerX - event.clientX ) * 0.1 + onPointerDownLon;
+                        lat = ( event.clientY - onPointerDownPointerY ) * 0.1 + onPointerDownLat;
+                    }
+                }
+                function onDocumentMouseUp( event ) {
+                    isUserInteracting = false;
+                }
+                function onDocumentMouseWheel( event ) {
+                    distance += event.deltaY * 0.05;
+                }
+            }
+                
+            if (isPC){
+                initPC();
+            }
+            else{
+                controlDevice = new THREE.DeviceOrientationControls(camera);
+            }
+
+
+            //帧率统计
+            stats = new Stats();
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.bottom = '0px';
+            stats.domElement.style.zIndex = 10;
+            document.body.appendChild( stats.domElement );
+
+            function animate() {
+                requestAnimationFrame( animate );
+                update();
+            }
+            animate();
+
+            function update() {
+                if (isPC){
+                    lat = Math.max( - 85, Math.min( 85, lat ) );
+                    phi = THREE.Math.degToRad( 90 - lat );
+                    theta = THREE.Math.degToRad( lon );
+                    camera.position.x = distance * Math.sin( phi ) * Math.cos( theta );
+                    camera.position.y = distance * Math.cos( phi );
+                    camera.position.z = distance * Math.sin( phi ) * Math.sin( theta );
+
+                    camera.lookAt( camera.target );
+                }
+                else{
+                    controlDevice.update();
+                }
+
+                stats.update();                
+                renderer.render( scene, camera );
+            }
+        </script>
+    </body>
+</html>
