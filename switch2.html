@@ -85,6 +85,7 @@
                 v.setAttribute( 'webkit-playsinline', '' );
                 v.setAttribute( 'playsinline', '' );
                 $e("top").appendChild(v);
+                v.pause(); //for pc
                 v.addEventListener("timeupdate", function(){
                     if (v.currentTime > currentTime){
                         //it never go back
@@ -157,16 +158,17 @@
                 return v;
             }
 
-            // var randView = ["images/af720.mp4", "images/af1080.mp4", "images/360.mp4", "images/720.mp4"];
+            // var randView = ["images/af720.mp4", "images/af1080.mp4", "images/af480.mp4"];
             // var viewIndex = 0;
             var timer;
             function switchPlaying(){
                 isSwitching = true;
                 play1 = !play1;
                 timer = Date.now();
-                //viewIndex = (viewIndex+1)%4;
+                //viewIndex = (viewIndex+1)%randView.length;
                 if(play1){
                     log("Start switch to " + video.getAttribute("bitrate"));
+                    //important! This can keep the new video to load and keep the old one playing
                     video.src = src1;
                     video.pause();
                     video2.play();
@@ -175,6 +177,7 @@
                 }
                 else{
                     log("Start switch to " + video2.getAttribute("bitrate"));
+                    //important! This can keep the new video to load and keep the old one playing
                     video2.src = src2;
                     video2.pause();
                     video.play();
