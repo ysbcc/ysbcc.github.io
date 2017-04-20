@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>pyramid</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
+            body {
+                background-color: #000000;
+                margin: 0px;
+                overflow: hidden;
+            }
+            #info {
+                position: absolute;
+                top: 0px; width: 100%;
+                color: #ffffff;
+                padding: 5px;
+                font-family:Monospace;
+                font-size:13px;
+                font-weight: bold;
+                text-align:center;
+            }
+            a {
+                color: #ffffff;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="ctrl" style="position: fixed;width: 70px;height: 20px;right: 0px; bottom:10px; border: 10px solid #888;text-align: center;padding: 8px; z-index: 9; cursor: pointer; color: white; font-size: 20px;">
+            PLAY
+        </div>
+        <div id="top" style="position: fixed;top:0px; height: 80; overflow: hidden;"></div>
+        <div id="bot" style="position: fixed;height: 200px; bottom: 0px; color:red;pointer-events: none;"></div>
+        <div id="container" style="z-index: 999"></div>
+
+        <script src="three.js"></script>
+        <script src="OBJLoader.js"></script>
+        <script src="TrackballControls.js"></script>
+        <script src="DeviceOrientationControls.js"></script>
+        <script src="stats.min.js"></script>
+        <script>
+            var $e = function (a){
+                return "string"==typeof a ? document.getElementById(a) : a;
+            }
+
+            // var DoublePlayer = function(){
+
+            // };
+
+
+            // var dPlayer = new DoublePlayer({
+            //     container : $e("container")
+            // });
+
+            // dPlayer.init();
+            // dPlayer.start("images/af1080.mp4");
+
+            // setTimeout(function(){
+            //     dPlayer.switch("images/af720.mp4", [0, 0, 0]);
+            // }, 9000);
+            
+
+            // var Adapter
+
+
+            var camera, scene, renderer, material, clock, stats, time, mesh, controlDevice, controlTap;
+
+            var bot = $e("bot");            
+            var container = $e( 'container' );
+            var ctrl = $e("ctrl");
+
+            var play1 = true;
+            var currentTime = 0;
+            var switchDelay = 0.5;
+            var isSwitching = false;
+            var video, video2, ttCover;
+            var curTT;
+
+            var isPC = (function(){
+                var userAgentInfo = navigator.userAgent;
+                var Agents = ["Android", "iPhone",
+                            "SymbianOS", "Windows Phone",
+                            "iPad", "iPod"];
+                var flag = true;
+                for (var v = 0; v < Agents.length; v++) {
+                    if (userAgentInfo.indexOf(Agents[v]) > 0) {
+                        flag = false;
+                        break;
+                    }
+                }
+                return flag;
+            })();
+
+            function log(txt){
+                bot.innerHTML = txt + "<br/>" + bot.innerHTML;
+            }
+
+            log("simulate switching two views");
+
+            function createVideo(src){
+                var v = document.createElement( 'video' );
+                v.height = 80;
+                v.loop = true;
+                v.autoplay = true;
+                //v.controls = "controls";
+                v.src = src;
+                v.setAttribute( 'webkit-playsinline', '' );
+                v.setAttribute( 'playsinline', '' );
+                $e("top").appendChild(v);
+                v.pause(); //for pc
+                v.addEventListener("timeupdate", function(){
+                    if (v.currentTime > currentTime){
+                        //it never go back
+                        currentTime = v.currentTime;    
+                    }
+                    else{
+                        //v.currentTime = currentTime + switchDelay;
+                    }
+                    
+                });
+                v.addEventListener("loadedmetadata", function(){
+                    //log(this.getAttribute("bitrate") + " loadedmetadata");
+                    if (isSwitching)
+                        v.currentTime = currentTime + switchDelay;                    
+                });
+
+                //var lastSeek = 0;
+                v.addEventListener("seeked", function(){
+                    if (isSwitching){
+                        //log(this.getAttribute("bitrate") + " seeked, start play");                                                
+                        v.play();                                                
+                    }
+                                   
+                });
+                var lastMesh = mesh;
+                v.addEventListener("playing", function(){
+                    if (isSwitching){
+                        isSwitching = false;
+                        switchDelay = (Date.now() - timer)/1000.0 + 0.1;
+                        log("switched to " + this.getAttribute("bitrate") + ", cost " + switchDelay.toFixed(2));
+                        //v.pause();
+
+                        //即使seek到固定时间，但新视频第一次渲染还是会取到视频的第一帧画面
+                        //material.map = curTT; 
+                        theMesh.material = new THREE.MeshBasicMaterial( { map: curTT, side: THREE.DoubleSide, shading: THREE.FlatShading, wireframe: false } );
+
+                        // var tmpgeometry = new THREE.SphereBufferGeometry( 500, 60, 60 );//半径，水平分片，垂直分片
+                        // tmpgeometry.scale( - 1, 1, 1 );
+                        
+                        // var tmpmaterial   = new THREE.MeshBasicMaterial( { map : curTT } );
+                        // var tmpmesh = new THREE.Mesh( tmpgeometry, tmpmaterial );
+                        // scene.remove(lastMesh);
+                        // scene.add( tmpmesh );
+
+                        // lastMesh = tmpmesh;
+                        //material.map = curTT;                        
+                        if(v == video){
+                            video2.src = "";
+                        }
+                        else{
+                            video.src = "";
+                        }
+
+                        setTimeout(function(){
+                            //v.play();
+                            
+                        }, 0);
+                        
+                    }      
+                });
+
+                return v;
+            }
+
+            // var randView = ["images/af720.mp4", "images/af1080.mp4", "images/af480.mp4"];
+            // var viewIndex = 0;
+            var timer;
+            function switchPlaying(){
+                isSwitching = true;
+                play1 = !play1;
+                timer = Date.now();
+                //viewIndex = (viewIndex+1)%randView.length;
+                if(play1){
+                    log("Start switch to " + video.getAttribute("bitrate"));
+                    //important! This can keep the new video to load and keep the old one playing
+                    video.src = src1;
+                    video.pause();
+                    video2.play();
+                    curTT = tt;
+                    
+                }
+                else{
+                    log("Start switch to " + video2.getAttribute("bitrate"));
+                    //important! This can keep the new video to load and keep the old one playing
+                    video2.src = src2;
+                    video2.pause();
+                    video.play();
+                    curTT = tt2;
+                    //clearInterval(time);                    
+                }
+
+            }
+
+            //init video
+            var src1, src2;
+            if (window.location.href.indexOf("1080") > 0){
+                src1 = "/images/af720.mp4";
+                src2 = "/images/af1080.mp4";                
+                ttCover = new THREE.TextureLoader().load( '/images/waterfall.png' );
+                switchDelay = 0.9;
+            }
+            else{                
+                src1 = "/images/360.mp4";          
+                src2 = "/images/720.mp4";
+                ttCover = new THREE.TextureLoader().load( '/images/benz.png' );
+            }
+            video = createVideo(src1);
+            video2 = createVideo(src2);
+            video.setAttribute("bitrate", "v1");
+            video2.setAttribute("bitrate", "v2");
+
+            var tt = new THREE.VideoTexture( video );
+            tt.minFilter = THREE.LinearFilter;
+            tt.format = THREE.RGBFormat;
+            var tt2 = new THREE.VideoTexture( video2 );
+            tt2.minFilter = THREE.LinearFilter;
+            tt2.format = THREE.RGBFormat;
+            curTT = tt;
+
+            //init three.js env
+            // camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1100 );//摄像机角度
+            // camera.target = new THREE.Vector3( 0, 0, 0 );
+
+            camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, .1, 2000 );
+            // the camera should be at 0, but the trackball controller doesn't
+            // work in that case so offset it a tiny amount
+            camera.position.z = 0.001;
+
+            controls = new THREE.TrackballControls( camera );
+            controls.rotateSpeed = 1.0;
+            controls.zoomSpeed = 1.2;
+            controls.panSpeed = 0.8;
+            controls.noZoom = true;
+            controls.noPan = true;
+            controls.staticMoving = true;
+            controls.dynamicDampingFactor = 0.3;
+            controls.keys = [ 65, 83, 68 ];
+            controls.addEventListener( 'change', function(){
+                renderer.render( scene, camera );
+            } );
+
+            scene = new THREE.Scene();
+            
+            //var geometry = new THREE.SphereBufferGeometry( 500, 60, 60 );//半径，水平分片，垂直分片
+            //geometry.scale( - 1, 1, 1 );
+
+            //material   = new THREE.MeshBasicMaterial( { map : ttCover } );
+            //mesh = new THREE.Mesh( geometry, material );
+            //scene.add( mesh );
+
+            var renderMeshFile = './trapezoid.obj';
+            var theMesh;
+            var manager = new THREE.LoadingManager();
+            var loader = new THREE.OBJLoader( manager );
+            loader.load(renderMeshFile, function ( object ) {
+                object.traverse( function ( child ) {
+                    //there is one mesh and one group
+                    if ( child instanceof THREE.Mesh ) {
+                        theMesh = child;
+                        material = child.material;
+                        theMesh.material = new THREE.MeshBasicMaterial( { map: curTT, side: THREE.DoubleSide, shading: THREE.FlatShading, wireframe: false } );
+                    }
+                } );
+
+                object.position.y = 0;
+                scene.add( object );
+                // remember the object for easy access to the rotation property
+                //renderMesh = object;
+            });
+
+            renderer = new THREE.WebGLRenderer();
+            renderer.setPixelRatio( window.devicePixelRatio );
+            renderer.setSize( window.innerWidth, window.innerHeight );
+            container.appendChild( renderer.domElement );
+
+
+            var isFirstPlaying = true;
+            ctrl.addEventListener("click", function(){
+                if (time){
+                    ctrl.innerHTML = "PLAY";
+                    clearInterval(time);
+                    time = null;
+                    video.src = src1;
+                    video2.src = src2;
+                    video.pause();
+                    video2.pause();                        
+                    isFirstPlaying = true;
+                }
+                else{
+                    ctrl.innerHTML = "STOP";
+                    //trigger both videos to play
+                    video.play();
+                    video2.play();
+
+                    var playingHandler2 = function(e){
+                        log("2 videos activated");                            
+                        
+                        //video.src = src1;
+                        video.play();
+                        material.map = tt;
+                        video2.src = "";
+
+                        time = setInterval(function(){
+                            //log("loop " + play1);                                
+                            switchPlaying();                                
+                        }, 10000);
+                        video2.removeEventListener("playing", playingHandler2);
+                    };
+
+                    if (isFirstPlaying){
+                        video2.addEventListener("playing", playingHandler2);                            
+                        isFirstPlaying = false;
+                    }                                                
+                }
+
+            });
+            
+            //These are the pc web controls
+            var isUserInteracting = false,
+            onMouseDownMouseX = 0, onMouseDownMouseY = 0,
+            lon = 0, onMouseDownLon = 0,
+            lat = 0, onMouseDownLat = 0,
+            phi = 0, theta = 0,
+            distance = 1,
+            onPointerDownPointerX = 0,
+            onPointerDownPointerY = 0,
+            onPointerDownLon = 0,
+            onPointerDownLat = 0;
+
+            function initPC(){
+                document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+                document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+                document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+                document.addEventListener( 'wheel', onDocumentMouseWheel, false );
+                window.addEventListener( 'resize', onWindowResize, false );
+
+                function onWindowResize() {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize( window.innerWidth, window.innerHeight );
+                }
+                function onDocumentMouseDown( event ) {
+                    event.preventDefault();
+                    isUserInteracting = true;
+                    onPointerDownPointerX = event.clientX;
+                    onPointerDownPointerY = event.clientY;
+                    onPointerDownLon = lon;
+                    onPointerDownLat = lat;
+                }
+                function onDocumentMouseMove( event ) {
+                    if ( isUserInteracting === true ) {
+                        lon = ( onPointerDownPointerX - event.clientX ) * 0.1 + onPointerDownLon;
+                        lat = ( event.clientY - onPointerDownPointerY ) * 0.1 + onPointerDownLat;
+                    }
+                }
+                function onDocumentMouseUp( event ) {
+                    isUserInteracting = false;
+                }
+                function onDocumentMouseWheel( event ) {
+                    distance += event.deltaY * 0.05;
+                }
+            }
+                
+            if (isPC){
+                initPC();
+            }
+            else{
+                //controlDevice = new THREE.DeviceOrientationControls(camera);
+            }
+
+
+            //帧率统计
+            stats = new Stats();
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.bottom = '0px';
+            stats.domElement.style.zIndex = 10;
+            document.body.appendChild( stats.domElement );
+
+            function animate() {
+                requestAnimationFrame( animate );
+                update();
+            }
+            animate();
+
+            function update() {
+                if (isPC){
+                    // lat = Math.max( - 85, Math.min( 85, lat ) );
+                    // phi = THREE.Math.degToRad( 90 - lat );
+                    // theta = THREE.Math.degToRad( lon );
+                    // camera.position.x = distance * Math.sin( phi ) * Math.cos( theta );
+                    // camera.position.y = distance * Math.cos( phi );
+                    // camera.position.z = distance * Math.sin( phi ) * Math.sin( theta );
+
+                    // camera.lookAt( camera.target );
+
+                }
+                else{
+                    //controlDevice.update();
+                }
+                controls.update();
+                stats.update();                
+                renderer.render( scene, camera );
+            }
+        </script>
+    </body>
+</html>
