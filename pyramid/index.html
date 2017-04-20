@@ -142,6 +142,8 @@
 
                         //即使seek到固定时间，但新视频第一次渲染还是会取到视频的第一帧画面
                         //material.map = curTT; 
+
+                        //用这种方法切换素材在iphone下会先出现第一帧画面，再回到当前画面，有待解决
                         theMesh.material = new THREE.MeshBasicMaterial( { map: curTT, side: THREE.DoubleSide, shading: THREE.FlatShading, wireframe: false } );
 
                         // var tmpgeometry = new THREE.SphereBufferGeometry( 500, 60, 60 );//半径，水平分片，垂直分片
@@ -310,6 +312,7 @@
                         material.map = tt;
                         video2.src = "";
 
+                        //The simulation of switching views!
                         time = setInterval(function(){
                             //log("loop " + play1);                                
                             switchPlaying();                                
